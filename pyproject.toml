@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "series-rag"
+version = "0.1.0"
+description = "A learning-focused semantic search project for related text sources."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "numpy>=2.0,<3.0",
+    "qdrant-client>=1.18,<2.0",
+    "rich>=15.0,<16.0",
+    "sentence-transformers>=5.0,<6.0",
+    "typer>=0.27,<1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "mypy>=2.0,<3.0",
+    "pytest>=9.0,<10.0",
+    "ruff>=0.15,<1.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra --strict-markers"
+markers = [
+    "integration: requires a running Qdrant service and is not part of the unit-test suite.",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+extend-exclude = [
+    ".venv",
+    "qdrant_storage",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["app"]
+strict = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unreachable = true
