@@ -4,7 +4,7 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
-from app.models import Document
+from app.models import Chunk, Document, SearchResult
 
 
 def test_document_and_metadata_are_immutable() -> None:
@@ -25,3 +25,28 @@ def test_document_and_metadata_are_immutable() -> None:
         document.text = "Changed text."
     with pytest.raises(TypeError):
         document.metadata["topic"] = "changed"
+
+
+def test_search_result_is_immutable() -> None:
+    """A ranked result cannot be changed after search returns it."""
+    document = Document(
+        document_id="document-1",
+        source_name="lesson.txt",
+        source_path="lesson.txt",
+        text="A short lesson.",
+    )
+    result = SearchResult(
+        chunk=Chunk(
+            chunk_id="chunk-1",
+            document_id=document.document_id,
+            source_name=document.source_name,
+            text=document.text,
+            chunk_index=0,
+            start_word=0,
+            end_word=3,
+        ),
+        score=0.9,
+    )
+
+    with pytest.raises(FrozenInstanceError):
+        result.score = 0.1

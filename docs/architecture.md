@@ -39,6 +39,15 @@ The architecture stays simple because the goal is to understand the mechanics of
 retrieval. Data models and small functions make intermediate results easy to
 print, assert in tests, and reason about while debugging.
 
+### In-memory retrieval
+
+The current in-memory vector store keeps each `Chunk` and its embedding in a
+Python dictionary, keyed by `chunk_id`. For every query, it calculates cosine
+similarity against every stored vector, sorts the scores, and returns the top
+results. This is brute-force linear search: one query costs O(n) comparisons for
+n stored vectors. It is intentionally easy to inspect, but it motivates the
+vector database work in the next milestone.
+
 ## Future Evolution
 
 After Phase 1, future phases may evolve the project in this order:
@@ -53,6 +62,10 @@ After Phase 1, future phases may evolve the project in this order:
    concrete need justifies their parsing complexity.
 5. **User experience:** consider an API or interface only after the command-line
    workflow and retrieval behavior are reliable.
+
+The next Phase 1 step introduces Qdrant. It will replace the in-process
+dictionary and full linear scan with a persistent vector database while keeping
+the chunk, embedding, and ranked-result concepts visible.
 
 These are directions, not commitments. Any new layer should be introduced only
 when it solves an observed requirement and preserves the project's inspectable,
