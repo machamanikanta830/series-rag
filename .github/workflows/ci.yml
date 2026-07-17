@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Quality and unit tests
+    runs-on: ubuntu-latest
+
+    steps:
+      # Fetch the commit or pull-request revision that triggered this workflow.
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      # Restore the pip download cache when pyproject.toml has not changed.
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      # Keep dependencies isolated from the GitHub Actions runner environment.
+      - name: Create virtual environment
+        run: python -m venv .venv
+
+      # Install the project plus Ruff, Mypy, and Pytest from the dev extra.
+      - name: Install project and development dependencies
+        run: |
+          .venv/bin/python -m pip install --upgrade pip
+          .venv/bin/python -m pip install ".[dev]"
+
+      # Run each quality gate separately so the job stops at the first failure.
+      - name: Run Ruff lint
+        run: .venv/bin/ruff check .
+
+      - name: Check Ruff formatting
+        run: .venv/bin/ruff format --check .
+
+      - name: Run Mypy
+        run: .venv/bin/mypy
+
+      # Qdrant integration tests stay out of CI until a dedicated service is added.
+      - name: Run unit tests
+        run: .venv/bin/pytest -m "not integration"
