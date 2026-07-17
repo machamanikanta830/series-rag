@@ -43,3 +43,11 @@ class Chunk:
     def __post_init__(self) -> None:
         """Protect metadata from mutation after chunk creation."""
         object.__setattr__(self, "metadata", _freeze_metadata(self.metadata))
+
+
+@dataclass(frozen=True, slots=True)
+class SearchResult:
+    """One ranked chunk returned by vector similarity search."""
+
+    chunk: Chunk
+    score: float
