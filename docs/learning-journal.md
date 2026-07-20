@@ -64,3 +64,16 @@ questions, not to produce formal documentation.
 
 - How does Qdrant index vectors after they are written?
 - How should collection lifecycle work when source documents are re-ingested?
+
+## Milestone 5B
+
+### Learned
+
+- A Qdrant point combines an identifier, an embedding vector, and a payload.
+- Persisted payloads can reconstruct immutable application-level chunks.
+- Cosine search returns higher scores for more closely aligned vectors.
+
+### Questions
+
+- How does Qdrant handle approximate nearest-neighbor recall at larger scales?
+- How should collection contents be updated when a source document changes?

@@ -54,8 +54,11 @@ Qdrant runs as a separate local Docker service. The application uses
 `qdrant-client` to connect to that service and create or inspect a collection.
 A collection defines one vector space: its embedding dimension and cosine
 distance must agree with the vectors the application will later write. Milestone
-5A only validates the connection and collection lifecycle; it does not write
-vectors or perform Qdrant searches.
+5B stores each `Chunk` as a Qdrant point. The embedding is the point vector, and
+the chunk fields plus metadata are explicit payload values used to reconstruct an
+immutable `Chunk` after searching. Qdrant persists these points outside the
+Python process and performs nearest-neighbor search for query vectors. For cosine
+collections, higher returned scores indicate closer semantic matches.
 
 ## Future Evolution
 
