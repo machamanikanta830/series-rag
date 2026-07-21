@@ -90,3 +90,16 @@ questions, not to produce formal documentation.
 
 - Where should ingestion orchestration connect document chunks to a vector store?
 - How should retrieval behavior be measured before generating answers?
+
+## Milestone 6B
+
+### Learned
+
+- Hit rate checks whether an expected chunk appears within a chosen rank limit.
+- Reciprocal rank rewards relevant chunks that appear earlier in a ranking.
+- Retrieval quality can be measured before any answer-generation layer exists.
+
+### Questions
+
+- How can a small evaluation set represent the variety of real user questions?
+- Which retrieval failures should lead to changes in chunking versus embeddings?

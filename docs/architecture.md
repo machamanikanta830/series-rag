@@ -68,6 +68,15 @@ that embedding to the configured vector store for nearest-neighbor search. It
 returns the store's ranked source chunks unchanged; it does not generate answers
 or contain storage-specific behavior.
 
+### Retrieval demo and evaluation
+
+The retrieval demo exercises the complete local path independently: document
+embeddings, in-memory storage, the retriever, and ranked source chunks. The
+lightweight evaluation utility measures whether expected chunk IDs appear at the
+top of those rankings. Hit rate and reciprocal rank measure retrieval quality,
+not answer quality; they help validate source retrieval before answer generation
+is considered.
+
 ## Future Evolution
 
 After Phase 1, future phases may evolve the project in this order:
