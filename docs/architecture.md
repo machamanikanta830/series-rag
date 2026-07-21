@@ -48,6 +48,18 @@ results. This is brute-force linear search: one query costs O(n) comparisons for
 n stored vectors. It is intentionally easy to inspect, but it motivates the
 vector database work in the next milestone.
 
+### Qdrant collection setup
+
+Qdrant runs as a separate local Docker service. The application uses
+`qdrant-client` to connect to that service and create or inspect a collection.
+A collection defines one vector space: its embedding dimension and cosine
+distance must agree with the vectors the application will later write. Milestone
+5B stores each `Chunk` as a Qdrant point. The embedding is the point vector, and
+the chunk fields plus metadata are explicit payload values used to reconstruct an
+immutable `Chunk` after searching. Qdrant persists these points outside the
+Python process and performs nearest-neighbor search for query vectors. For cosine
+collections, higher returned scores indicate closer semantic matches.
+
 ## Future Evolution
 
 After Phase 1, future phases may evolve the project in this order:
@@ -63,9 +75,9 @@ After Phase 1, future phases may evolve the project in this order:
 5. **User experience:** consider an API or interface only after the command-line
    workflow and retrieval behavior are reliable.
 
-The next Phase 1 step introduces Qdrant. It will replace the in-process
-dictionary and full linear scan with a persistent vector database while keeping
-the chunk, embedding, and ranked-result concepts visible.
+Milestone 5B will connect Qdrant to the vector-store interface. It will replace
+the in-process dictionary and full linear scan with persistent vector writes and
+searches while keeping the chunk, embedding, and ranked-result concepts visible.
 
 These are directions, not commitments. Any new layer should be introduced only
 when it solves an observed requirement and preserves the project's inspectable,

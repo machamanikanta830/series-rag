@@ -51,3 +51,29 @@ questions, not to produce formal documentation.
 
 - How do approximate nearest-neighbor indexes avoid checking every vector?
 - What trade-offs does a vector database make between speed and recall?
+
+## Milestone 5A
+
+### Learned
+
+- Qdrant runs independently from the Python process as a local Docker service.
+- A collection fixes the vector dimension and distance metric for stored vectors.
+- Collection setup can be validated before adding vector writes or retrieval.
+
+### Questions
+
+- How does Qdrant index vectors after they are written?
+- How should collection lifecycle work when source documents are re-ingested?
+
+## Milestone 5B
+
+### Learned
+
+- A Qdrant point combines an identifier, an embedding vector, and a payload.
+- Persisted payloads can reconstruct immutable application-level chunks.
+- Cosine search returns higher scores for more closely aligned vectors.
+
+### Questions
+
+- How does Qdrant handle approximate nearest-neighbor recall at larger scales?
+- How should collection contents be updated when a source document changes?
