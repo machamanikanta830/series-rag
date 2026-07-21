@@ -77,3 +77,16 @@ questions, not to produce formal documentation.
 
 - How does Qdrant handle approximate nearest-neighbor recall at larger scales?
 - How should collection contents be updated when a source document changes?
+
+## Milestone 6A
+
+### Learned
+
+- A retriever coordinates query embedding and vector search without owning either.
+- Query validation belongs at the caller-facing orchestration boundary.
+- Returning store results unchanged preserves each store's ranking semantics.
+
+### Questions
+
+- Where should ingestion orchestration connect document chunks to a vector store?
+- How should retrieval behavior be measured before generating answers?

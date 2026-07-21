@@ -60,6 +60,14 @@ immutable `Chunk` after searching. Qdrant persists these points outside the
 Python process and performs nearest-neighbor search for query vectors. For cosine
 collections, higher returned scores indicate closer semantic matches.
 
+### Retriever orchestration
+
+`SemanticRetriever` owns query-time orchestration. It validates and trims query
+text, asks the configured embedding provider for one query embedding, and passes
+that embedding to the configured vector store for nearest-neighbor search. It
+returns the store's ranked source chunks unchanged; it does not generate answers
+or contain storage-specific behavior.
+
 ## Future Evolution
 
 After Phase 1, future phases may evolve the project in this order:
@@ -75,9 +83,8 @@ After Phase 1, future phases may evolve the project in this order:
 5. **User experience:** consider an API or interface only after the command-line
    workflow and retrieval behavior are reliable.
 
-Milestone 5B will connect Qdrant to the vector-store interface. It will replace
-the in-process dictionary and full linear scan with persistent vector writes and
-searches while keeping the chunk, embedding, and ranked-result concepts visible.
+The retriever lets callers use either vector-store implementation through the
+same query-time path while keeping embedding and storage decisions separate.
 
 These are directions, not commitments. Any new layer should be introduced only
 when it solves an observed requirement and preserves the project's inspectable,
