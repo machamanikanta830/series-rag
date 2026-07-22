@@ -77,3 +77,29 @@ questions, not to produce formal documentation.
 
 - How does Qdrant handle approximate nearest-neighbor recall at larger scales?
 - How should collection contents be updated when a source document changes?
+
+## Milestone 6A
+
+### Learned
+
+- A retriever coordinates query embedding and vector search without owning either.
+- Query validation belongs at the caller-facing orchestration boundary.
+- Returning store results unchanged preserves each store's ranking semantics.
+
+### Questions
+
+- Where should ingestion orchestration connect document chunks to a vector store?
+- How should retrieval behavior be measured before generating answers?
+
+## Milestone 6B
+
+### Learned
+
+- Hit rate checks whether an expected chunk appears within a chosen rank limit.
+- Reciprocal rank rewards relevant chunks that appear earlier in a ranking.
+- Retrieval quality can be measured before any answer-generation layer exists.
+
+### Questions
+
+- How can a small evaluation set represent the variety of real user questions?
+- Which retrieval failures should lead to changes in chunking versus embeddings?
