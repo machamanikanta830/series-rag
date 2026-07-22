@@ -77,6 +77,16 @@ top of those rankings. Hit rate and reciprocal rank measure retrieval quality,
 not answer quality; they help validate source retrieval before answer generation
 is considered.
 
+### Context builder
+
+The context builder turns ranked `SearchResult` objects into readable,
+source-attributed text for a later prompt-construction step. It preserves the
+retriever's order, includes each `chunk_id` only once, and stops before adding a
+fully formatted chunk that would exceed its character budget. It returns both
+the context text and the immutable included chunks, so callers can inspect the
+source metadata without parsing the formatted text. It does not build prompts
+or call an LLM.
+
 ## Future Evolution
 
 After Phase 1, future phases may evolve the project in this order:
