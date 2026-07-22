@@ -87,6 +87,14 @@ the context text and the immutable included chunks, so callers can inspect the
 source metadata without parsing the formatted text. It does not build prompts
 or call an LLM.
 
+### Prompt builder
+
+The prompt builder combines a validated user question and a previously built
+context string into one deterministic, provider-neutral text prompt. Its
+instructions require a future model to use only the supplied context, cite its
+source labels, and state clearly when the context cannot support an answer. It
+does not call an LLM or define provider-specific message objects.
+
 ## Future Evolution
 
 After Phase 1, future phases may evolve the project in this order:
