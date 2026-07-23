@@ -77,6 +77,14 @@ top of those rankings. Hit rate and reciprocal rank measure retrieval quality,
 not answer quality; they help validate source retrieval before answer generation
 is considered.
 
+### Generation interface
+
+The generation interface accepts one completed prompt and returns plain text
+without exposing an SDK, provider-specific chat-message type, or network
+configuration. Its deterministic fake provider validates prompts, records them
+per instance, and returns a configured fixed response. This makes a future
+generation step testable without coupling the project to a real model provider.
+
 ## Future Evolution
 
 After Phase 1, future phases may evolve the project in this order:
