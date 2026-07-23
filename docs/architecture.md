@@ -77,6 +77,24 @@ top of those rankings. Hit rate and reciprocal rank measure retrieval quality,
 not answer quality; they help validate source retrieval before answer generation
 is considered.
 
+### Context builder
+
+The context builder turns ranked `SearchResult` objects into readable,
+source-attributed text for a later prompt-construction step. It preserves the
+retriever's order, includes each `chunk_id` only once, and stops before adding a
+fully formatted chunk that would exceed its character budget. It returns both
+the context text and the immutable included chunks, so callers can inspect the
+source metadata without parsing the formatted text. It does not build prompts
+or call an LLM.
+
+### Prompt builder
+
+The prompt builder combines a validated user question and a previously built
+context string into one deterministic, provider-neutral text prompt. Its
+instructions require a future model to use only the supplied context, cite its
+source labels, and state clearly when the context cannot support an answer. It
+does not call an LLM or define provider-specific message objects.
+
 ### Generation interface
 
 The generation interface accepts one completed prompt and returns plain text
