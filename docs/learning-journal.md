@@ -103,3 +103,16 @@ questions, not to produce formal documentation.
 
 - How can a small evaluation set represent the variety of real user questions?
 - Which retrieval failures should lead to changes in chunking versus embeddings?
+
+## Milestone 7B
+
+### Learned
+
+- A prompt can make grounding requirements explicit before a model is involved.
+- Stable prompt formatting makes behavior easier to inspect and test.
+- Source labels in retrieval context give a future answer layer concrete citation targets.
+
+### Questions
+
+- How should a future answer layer validate citations against included chunks?
+- When should prompt instructions evolve based on observed retrieval failures?
