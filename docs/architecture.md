@@ -85,6 +85,14 @@ configuration. Its deterministic fake provider validates prompts, records them
 per instance, and returns a configured fixed response. This makes a future
 generation step testable without coupling the project to a real model provider.
 
+### Ollama generation provider
+
+`OllamaGenerationProvider` is the first real generation-provider implementation.
+It sends a completed prompt to the non-streaming `/api/generate` endpoint of a
+locally running Ollama service and returns only the generated text. Generation
+remains behind the provider interface: no full RAG orchestration, retrieval,
+context construction, or prompt construction is connected to Ollama yet.
+
 ## Future Evolution
 
 After Phase 1, future phases may evolve the project in this order:

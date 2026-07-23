@@ -103,3 +103,18 @@ questions, not to produce formal documentation.
 
 - How can a small evaluation set represent the variety of real user questions?
 - Which retrieval failures should lead to changes in chunking versus embeddings?
+
+## Milestone 8B
+
+### Learned
+
+- A provider adapter can isolate HTTP request and response details from the rest
+  of an application.
+- Non-streaming Ollama generation uses one JSON request containing a model,
+  prompt, and `stream: false`.
+- Network and response failures need clear application-level error messages.
+
+### Questions
+
+- How should a future answer layer select a local model for different tasks?
+- Which provider behaviors should be tested through an optional local smoke test?
