@@ -108,8 +108,30 @@ generation step testable without coupling the project to a real model provider.
 `OllamaGenerationProvider` is the first real generation-provider implementation.
 It sends a completed prompt to the non-streaming `/api/generate` endpoint of a
 locally running Ollama service and returns only the generated text. Generation
-remains behind the provider interface: no full RAG orchestration, retrieval,
-context construction, or prompt construction is connected to Ollama yet.
+remains behind the provider interface, so the pipeline can use it without
+depending on Ollama-specific HTTP details.
+
+### Complete RAG pipeline
+
+`RAGPipeline` composes the existing components into one inspectable flow:
+
+```text
+question
+  → SemanticRetriever
+  → ranked SearchResult objects
+  → ContextBuilder
+  → PromptBuilder
+  → GenerationProvider
+  → RAGPipelineResult
+```
+
+It passes intermediate values through unchanged and returns the generated answer
+alongside the built context, completed prompt, ranked results, and included
+chunks. The pipeline contains no provider-specific logic, caching, retries, or
+retrieval modifications. The local demo uses `FakeGenerationProvider`, so it
+does not require Ollama. It prefers a cached Sentence Transformer model and uses
+explicit deterministic vectors for its fixed examples when that model is not
+available offline.
 
 ## Future Evolution
 

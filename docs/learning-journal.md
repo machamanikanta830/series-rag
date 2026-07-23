@@ -131,3 +131,18 @@ questions, not to produce formal documentation.
 
 - How should a future answer layer select a local model for different tasks?
 - Which provider behaviors should be tested through an optional local smoke test?
+
+## Milestone 8C
+
+### Learned
+
+- A thin orchestration layer can connect RAG stages without duplicating their
+  validation, ranking, or provider behavior.
+- Returning intermediate values makes a RAG run easier to inspect and debug.
+- A deterministic fake provider allows the complete pipeline to run locally
+  without a model service.
+
+### Questions
+
+- Which pipeline results should a future user-facing interface display?
+- How should future answer evaluation use the retrieved context and citations?

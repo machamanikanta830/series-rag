@@ -6,7 +6,9 @@ instead of delegating the core ideas to a framework.
 
 The eventual application will ingest related transcripts, course notes, podcasts,
 documentation, and other text sources, then retrieve the most relevant source
-chunks for a question. Phase 1 stops at retrieval: it does not generate answers.
+chunks for a question. The project now also has a small, locally testable
+orchestration path that can pass retrieved context to a fake generation provider.
+It is not a production chatbot, API, or user interface.
 
 ## Phase 1 scope
 
@@ -20,6 +22,9 @@ Phase 1 implements this path:
   → vector storage
   → ranked semantic retrieval
   → source-grounded chunks
+  → context and prompt construction
+  → generation provider
+  → inspectable generated answer
 ```
 
 The required components are:
@@ -35,8 +40,8 @@ The required components are:
 
 ## Non-goals for Phase 1
 
-- No chatbot or generated-answer layer
-- No LLM, OpenAI API, LangChain, or LlamaIndex
+- No production chatbot, API, or user interface
+- No OpenAI API, LangChain, or LlamaIndex
 - No PDF or DOCX ingestion
 - No FastAPI, React, PostgreSQL, Redis, Celery, or Kubernetes
 - No committed model files, Qdrant data, secrets, virtual environments, caches,
@@ -53,6 +58,19 @@ may resolve to a global Conda installation:
 .venv/bin/mypy
 .venv/bin/pytest
 ```
+
+## Local RAG demonstration
+
+Run the complete inspectable pipeline with a deterministic fake response:
+
+```bash
+.venv/bin/python scripts/rag_demo.py
+```
+
+The demo uses the local sentence-transformer cache and the in-memory vector
+store when the model is available. Otherwise, it uses explicit deterministic
+vectors for its fixed example content. It does not require Ollama or make a
+generation network request.
 
 The ingestion and search commands will be added in later milestones:
 
