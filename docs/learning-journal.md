@@ -116,3 +116,33 @@ questions, not to produce formal documentation.
 
 - How should a future answer layer validate citations against included chunks?
 - When should prompt instructions evolve based on observed retrieval failures?
+
+## Milestone 8B
+
+### Learned
+
+- A provider adapter can isolate HTTP request and response details from the rest
+  of an application.
+- Non-streaming Ollama generation uses one JSON request containing a model,
+  prompt, and `stream: false`.
+- Network and response failures need clear application-level error messages.
+
+### Questions
+
+- How should a future answer layer select a local model for different tasks?
+- Which provider behaviors should be tested through an optional local smoke test?
+
+## Milestone 8C
+
+### Learned
+
+- A thin orchestration layer can connect RAG stages without duplicating their
+  validation, ranking, or provider behavior.
+- Returning intermediate values makes a RAG run easier to inspect and debug.
+- A deterministic fake provider allows the complete pipeline to run locally
+  without a model service.
+
+### Questions
+
+- Which pipeline results should a future user-facing interface display?
+- How should future answer evaluation use the retrieved context and citations?

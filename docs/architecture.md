@@ -95,6 +95,44 @@ instructions require a future model to use only the supplied context, cite its
 source labels, and state clearly when the context cannot support an answer. It
 does not call an LLM or define provider-specific message objects.
 
+### Generation interface
+
+The generation interface accepts one completed prompt and returns plain text
+without exposing an SDK, provider-specific chat-message type, or network
+configuration. Its deterministic fake provider validates prompts, records them
+per instance, and returns a configured fixed response. This makes a future
+generation step testable without coupling the project to a real model provider.
+
+### Ollama generation provider
+
+`OllamaGenerationProvider` is the first real generation-provider implementation.
+It sends a completed prompt to the non-streaming `/api/generate` endpoint of a
+locally running Ollama service and returns only the generated text. Generation
+remains behind the provider interface, so the pipeline can use it without
+depending on Ollama-specific HTTP details.
+
+### Complete RAG pipeline
+
+`RAGPipeline` composes the existing components into one inspectable flow:
+
+```text
+question
+  → SemanticRetriever
+  → ranked SearchResult objects
+  → ContextBuilder
+  → PromptBuilder
+  → GenerationProvider
+  → RAGPipelineResult
+```
+
+It passes intermediate values through unchanged and returns the generated answer
+alongside the built context, completed prompt, ranked results, and included
+chunks. The pipeline contains no provider-specific logic, caching, retries, or
+retrieval modifications. The local demo uses `FakeGenerationProvider`, so it
+does not require Ollama. It prefers a cached Sentence Transformer model and uses
+explicit deterministic vectors for its fixed examples when that model is not
+available offline.
+
 ## Future Evolution
 
 After Phase 1, future phases may evolve the project in this order:
