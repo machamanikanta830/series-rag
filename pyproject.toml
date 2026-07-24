@@ -9,6 +9,7 @@ description = "A learning-focused semantic search project for related text sourc
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "fastapi>=0.115,<1.0",
     "numpy>=2.0,<3.0",
     "qdrant-client>=1.18,<2.0",
     "rich>=15.0,<16.0",
@@ -18,6 +19,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "httpx>=0.27,<1.0",
     "mypy>=2.0,<3.0",
     "pytest>=9.0,<10.0",
     "ruff>=0.15,<1.0",

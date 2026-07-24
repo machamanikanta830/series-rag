@@ -39,6 +39,13 @@ The architecture stays simple because the goal is to understand the mechanics of
 retrieval. Data models and small functions make intermediate results easy to
 print, assert in tests, and reason about while debugging.
 
+### API foundation
+
+`app.api.main` provides the initial FastAPI public surface: metadata at `/`, a
+process-level `/health` response, OpenAPI documentation, and a validated `/query`
+request shape. The query endpoint deliberately returns `501 Not Implemented` in
+this milestone; the API does not yet construct or call the RAG pipeline.
+
 ### In-memory retrieval
 
 The current in-memory vector store keeps each `Chunk` and its embedding in a
