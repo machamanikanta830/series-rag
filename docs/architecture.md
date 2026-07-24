@@ -39,6 +39,15 @@ The architecture stays simple because the goal is to understand the mechanics of
 retrieval. Data models and small functions make intermediate results easy to
 print, assert in tests, and reason about while debugging.
 
+### FastAPI adapter
+
+`app.api.main` exposes metadata at `/`, a process-level `/health` response,
+OpenAPI documentation, and a working `/query` adapter around `RAGPipeline`.
+Pydantic request and response models remain separate from internal immutable
+domain models. The pipeline is obtained through an overrideable FastAPI
+dependency, allowing API tests to run entirely offline without Sentence
+Transformers, Qdrant, or Ollama.
+
 ### In-memory retrieval
 
 The current in-memory vector store keeps each `Chunk` and its embedding in a
