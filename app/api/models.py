@@ -33,15 +33,20 @@ class QueryRequest(BaseModel):
 
 
 class SourceResponse(BaseModel):
-    """One source chunk shape reserved for a future query response."""
+    """One source chunk included in a generated answer's context."""
 
+    chunk_id: str
+    document_id: str
     source_name: str
     chunk_index: int
     text: str
+    score: float
 
 
 class QueryResponse(BaseModel):
-    """A future source-grounded answer response without implementation details."""
+    """A generated answer and its inspectable grounding information."""
 
     answer: str
+    context: str
+    prompt: str
     sources: list[SourceResponse]

@@ -146,3 +146,18 @@ questions, not to produce formal documentation.
 
 - Which pipeline results should a future user-facing interface display?
 - How should future answer evaluation use the retrieved context and citations?
+
+## Milestone 9B
+
+### Learned
+
+- FastAPI acts as an adapter that translates HTTP models to and from application
+  pipeline values.
+- Dependency overrides keep API tests independent of model and database services.
+- Request-specific retrieval limits can be passed without mutating shared pipeline
+  configuration.
+
+### Questions
+
+- Which application failures should become stable public API error codes?
+- When should the development dependency be replaced with production wiring?

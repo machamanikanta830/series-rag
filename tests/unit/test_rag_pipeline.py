@@ -159,6 +159,24 @@ def test_pipeline_orchestrates_each_component_once_and_returns_details() -> None
     assert result.included_chunks == (results[0].chunk,)
 
 
+def test_pipeline_uses_a_per_call_top_k_without_changing_its_default() -> None:
+    """Request-specific limits do not mutate later pipeline retrieval behavior."""
+    results = [_search_result("first", 0.9)]
+    retriever = RecordingRetriever(results)
+    pipeline = _pipeline(
+        retriever,
+        RecordingContextBuilder(ContextBuildResult("Context", (results[0].chunk,))),
+        RecordingPromptBuilder("Prompt"),
+        FakeGenerationProvider("Answer"),
+        top_k=2,
+    )
+
+    pipeline.answer("First question", top_k=1)
+    pipeline.answer("Second question")
+
+    assert retriever.calls == [("First question", 1), ("Second question", 2)]
+
+
 @pytest.mark.parametrize("top_k", [0, -1])
 def test_pipeline_rejects_non_positive_top_k(top_k: int) -> None:
     """The pipeline cannot request zero or negative retrieval results."""

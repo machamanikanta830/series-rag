@@ -8,7 +8,8 @@ The eventual application will ingest related transcripts, course notes, podcasts
 documentation, and other text sources, then retrieve the most relevant source
 chunks for a question. The project now also has a small, locally testable
 orchestration path that can pass retrieved context to a fake generation provider.
-It is not a production chatbot, API, or user interface.
+A small FastAPI adapter now exposes that development pipeline; it is not a
+production chatbot or user interface.
 
 ## Phase 1 scope
 
@@ -40,10 +41,10 @@ The required components are:
 
 ## Non-goals for Phase 1
 
-- No production chatbot, API, or user interface
+- No production chatbot or user interface
 - No OpenAI API, LangChain, or LlamaIndex
 - No PDF or DOCX ingestion
-- No FastAPI, React, PostgreSQL, Redis, Celery, or Kubernetes
+- No React, PostgreSQL, Redis, Celery, or Kubernetes
 - No committed model files, Qdrant data, secrets, virtual environments, caches,
   or private source transcripts
 
@@ -71,6 +72,25 @@ The demo uses the local sentence-transformer cache and the in-memory vector
 store when the model is available. Otherwise, it uses explicit deterministic
 vectors for its fixed example content. It does not require Ollama or make a
 generation network request.
+
+## Query API
+
+The development API accepts a question and retrieval limit:
+
+```http
+POST /query
+Content-Type: application/json
+
+{
+  "question": "What is the shared responsibility model?",
+  "top_k": 5
+}
+```
+
+The response contains the answer, built context, completed prompt, and ordered
+source chunks with their similarity scores. The default dependency uses a small
+offline development corpus and deterministic fake generation; it is not
+production configuration.
 
 The ingestion and search commands will be added in later milestones:
 

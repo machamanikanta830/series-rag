@@ -32,20 +32,16 @@ class RAGPipeline:
         top_k: int = 5,
     ) -> None:
         """Store injected components and one validated retrieval result limit."""
-        if isinstance(top_k, bool) or not isinstance(top_k, int):
-            raise TypeError("top_k must be an integer")
-        if top_k <= 0:
-            raise ValueError("top_k must be greater than zero")
-
         self._retriever = retriever
         self._context_builder = context_builder
         self._prompt_builder = prompt_builder
         self._generation_provider = generation_provider
-        self._top_k = top_k
+        self._top_k = _validate_top_k(top_k)
 
-    def answer(self, question: str) -> RAGPipelineResult:
+    def answer(self, question: str, top_k: int | None = None) -> RAGPipelineResult:
         """Run one complete source-grounded answer path for the original question."""
-        search_results = self._retriever.retrieve(question, top_k=self._top_k)
+        retrieval_top_k = self._top_k if top_k is None else _validate_top_k(top_k)
+        search_results = self._retriever.retrieve(question, top_k=retrieval_top_k)
         context_result = self._context_builder.build(search_results)
 
         if not context_result.text.strip() or not context_result.included_chunks:
@@ -63,3 +59,12 @@ class RAGPipeline:
             search_results=tuple(search_results),
             included_chunks=context_result.included_chunks,
         )
+
+
+def _validate_top_k(top_k: int) -> int:
+    """Return one positive integer retrieval limit."""
+    if isinstance(top_k, bool) or not isinstance(top_k, int):
+        raise TypeError("top_k must be an integer")
+    if top_k <= 0:
+        raise ValueError("top_k must be greater than zero")
+    return top_k
