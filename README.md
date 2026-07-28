@@ -92,6 +92,17 @@ source chunks with their similarity scores. The default dependency uses a small
 offline development corpus and deterministic fake generation; it is not
 production configuration.
 
+Upload one small UTF-8 text or Markdown document for in-process ingestion:
+
+```bash
+curl -X POST http://localhost:8000/documents \
+  -F "file=@sample-data/example.md"
+```
+
+Supported extensions are `.txt`, `.md`, and `.markdown`; uploads are limited to
+1 MB. Uploaded documents and vectors remain in memory for the application
+process and are not persisted.
+
 The ingestion and search commands will be added in later milestones:
 
 ```bash

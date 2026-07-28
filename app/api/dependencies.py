@@ -1,5 +1,7 @@
 """Overrideable FastAPI dependencies for application-level components."""
 
+from dataclasses import dataclass
+
 from app.context.builder import ContextBuilder
 from app.embeddings.base import EmbeddingProvider
 from app.generation.fake import FakeGenerationProvider
@@ -7,6 +9,7 @@ from app.models import Chunk
 from app.pipeline.rag_pipeline import RAGPipeline
 from app.prompts.builder import PromptBuilder
 from app.retrieval.retriever import SemanticRetriever
+from app.services.ingestion import IngestionService
 from app.vector_stores.in_memory import InMemoryVectorStore
 
 
@@ -42,8 +45,16 @@ class _DevelopmentEmbeddingProvider(EmbeddingProvider):
         return [provider_score, customer_score]
 
 
-def get_rag_pipeline() -> RAGPipeline:
-    """Build a deterministic offline pipeline for the development API default."""
+@dataclass(frozen=True, slots=True)
+class _DevelopmentApplicationState:
+    """Components that intentionally share one in-process vector store."""
+
+    rag_pipeline: RAGPipeline
+    ingestion_service: IngestionService
+
+
+def _build_development_application_state() -> _DevelopmentApplicationState:
+    """Build deterministic offline query and ingestion dependencies."""
     chunks = [
         Chunk(
             chunk_id="development-provider-responsibility",
@@ -73,7 +84,7 @@ def get_rag_pipeline() -> RAGPipeline:
         embedding_provider.embed_documents([chunk.text for chunk in chunks]),
     )
 
-    return RAGPipeline(
+    rag_pipeline = RAGPipeline(
         retriever=SemanticRetriever(embedding_provider, vector_store),
         context_builder=ContextBuilder(),
         prompt_builder=PromptBuilder(),
@@ -81,3 +92,24 @@ def get_rag_pipeline() -> RAGPipeline:
             "This is a deterministic development answer."
         ),
     )
+    ingestion_service = IngestionService(embedding_provider, vector_store)
+    return _DevelopmentApplicationState(rag_pipeline, ingestion_service)
+
+
+_development_application_state = _build_development_application_state()
+
+
+def get_rag_pipeline() -> RAGPipeline:
+    """Return the shared deterministic offline development query pipeline."""
+    return _development_application_state.rag_pipeline
+
+
+def get_ingestion_service() -> IngestionService:
+    """Return the ingestion service backed by the shared development store."""
+    return _development_application_state.ingestion_service
+
+
+def reset_development_application_state() -> None:
+    """Replace development state so tests cannot leak uploaded documents."""
+    global _development_application_state
+    _development_application_state = _build_development_application_state()
