@@ -50,3 +50,13 @@ class QueryResponse(BaseModel):
     context: str
     prompt: str
     sources: list[SourceResponse]
+
+
+class DocumentIngestionResponse(BaseModel):
+    """Public summary of one successfully ingested uploaded document."""
+
+    document_id: str
+    filename: str
+    chunks_created: int
+    embedding_dimension: int
+    vector_store_name: str

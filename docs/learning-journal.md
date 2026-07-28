@@ -175,3 +175,19 @@ questions, not to produce formal documentation.
 
 - How should ingestion report partial progress when processing many documents?
 - When should a source update remove chunks that no longer exist?
+
+## Milestone 10B
+
+### Learned
+
+- Multipart uploads require bounded reads before decoding content in memory.
+- Filename extensions and UTF-8 content need independent validation at the HTTP
+  boundary.
+- Query and ingestion dependencies must reference the same vector store for
+  uploaded content to become immediately retrievable.
+
+### Questions
+
+- How should application state move from in-memory development storage to a
+  durable deployment configuration?
+- Which document-level metadata will future filtering and source management need?

@@ -5,7 +5,10 @@ from collections.abc import Iterator
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.dependencies import get_rag_pipeline
+from app.api.dependencies import (
+    get_rag_pipeline,
+    reset_development_application_state,
+)
 from app.api.main import API_DESCRIPTION, API_TITLE, API_VERSION, app
 from app.models import Chunk, SearchResult
 from app.pipeline.rag_pipeline import RAGPipeline, RAGPipelineResult
@@ -61,9 +64,11 @@ class StubPipeline(RAGPipeline):
 @pytest.fixture(autouse=True)
 def clear_dependency_overrides() -> Iterator[None]:
     """Keep FastAPI dependency overrides isolated between API tests."""
+    reset_development_application_state()
     app.dependency_overrides.clear()
     yield
     app.dependency_overrides.clear()
+    reset_development_application_state()
 
 
 def _override_pipeline(pipeline: StubPipeline) -> None:

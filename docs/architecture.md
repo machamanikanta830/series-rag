@@ -56,6 +56,15 @@ and vector-store upsert. It delegates each operation to the existing component
 and returns immutable statistics describing the completed ingestion. Documents
 that normalize to empty text produce no chunks and no vector-store write.
 
+### Document upload adapter
+
+`POST /documents` accepts one bounded `.txt`, `.md`, or `.markdown` multipart
+upload, validates its filename and UTF-8 content, creates a deterministic
+immutable `Document`, and delegates to `IngestionService`. The response exposes
+API-specific ingestion statistics. The default ingestion and query dependencies
+share one explicitly resettable in-memory development state, so uploaded content
+can be retrieved later in the same application process without external services.
+
 ### In-memory retrieval
 
 The current in-memory vector store keeps each `Chunk` and its embedding in a
