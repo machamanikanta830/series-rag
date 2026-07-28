@@ -161,3 +161,17 @@ questions, not to produce formal documentation.
 
 - Which application failures should become stable public API error codes?
 - When should the development dependency be replaced with production wiring?
+
+## Milestone 10A
+
+### Learned
+
+- A thin ingestion service can coordinate normalization, chunking, embeddings,
+  and storage without reimplementing those operations.
+- Deterministic chunk IDs make repeated vector-store upserts idempotent.
+- Empty normalized documents should avoid unnecessary embedding and storage work.
+
+### Questions
+
+- How should ingestion report partial progress when processing many documents?
+- When should a source update remove chunks that no longer exist?

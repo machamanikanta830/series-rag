@@ -48,6 +48,14 @@ domain models. The pipeline is obtained through an overrideable FastAPI
 dependency, allowing API tests to run entirely offline without Sentence
 Transformers, Qdrant, or Ollama.
 
+### Document ingestion service
+
+`IngestionService` owns the application-level write path for one existing
+`Document`: conservative normalization, fixed-size chunking, document embedding,
+and vector-store upsert. It delegates each operation to the existing component
+and returns immutable statistics describing the completed ingestion. Documents
+that normalize to empty text produce no chunks and no vector-store write.
+
 ### In-memory retrieval
 
 The current in-memory vector store keeps each `Chunk` and its embedding in a
