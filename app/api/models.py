@@ -60,3 +60,25 @@ class DocumentIngestionResponse(BaseModel):
     chunks_created: int
     embedding_dimension: int
     vector_store_name: str
+
+
+class DocumentSummaryResponse(BaseModel):
+    """Public metadata for one ingested document."""
+
+    document_id: str
+    filename: str
+    chunk_count: int
+
+
+class DocumentChunkResponse(BaseModel):
+    """One source chunk exposed without its embedding vector."""
+
+    chunk_id: str
+    chunk_index: int
+    text: str
+
+
+class DocumentDetailResponse(DocumentSummaryResponse):
+    """One document summary and its chunks in source order."""
+
+    chunks: list[DocumentChunkResponse]

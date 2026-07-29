@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 
 from app.context.builder import ContextBuilder
+from app.document_catalog import DocumentCatalog, InMemoryDocumentCatalog
 from app.embeddings.base import EmbeddingProvider
 from app.generation.fake import FakeGenerationProvider
 from app.models import Chunk
@@ -51,6 +52,7 @@ class _DevelopmentApplicationState:
 
     rag_pipeline: RAGPipeline
     ingestion_service: IngestionService
+    document_catalog: DocumentCatalog
 
 
 def _build_development_application_state() -> _DevelopmentApplicationState:
@@ -79,6 +81,7 @@ def _build_development_application_state() -> _DevelopmentApplicationState:
     ]
     embedding_provider = _DevelopmentEmbeddingProvider()
     vector_store = InMemoryVectorStore()
+    document_catalog = InMemoryDocumentCatalog()
     vector_store.upsert(
         chunks,
         embedding_provider.embed_documents([chunk.text for chunk in chunks]),
@@ -92,8 +95,16 @@ def _build_development_application_state() -> _DevelopmentApplicationState:
             "This is a deterministic development answer."
         ),
     )
-    ingestion_service = IngestionService(embedding_provider, vector_store)
-    return _DevelopmentApplicationState(rag_pipeline, ingestion_service)
+    ingestion_service = IngestionService(
+        embedding_provider,
+        vector_store,
+        document_catalog=document_catalog,
+    )
+    return _DevelopmentApplicationState(
+        rag_pipeline,
+        ingestion_service,
+        document_catalog,
+    )
 
 
 _development_application_state = _build_development_application_state()
@@ -107,6 +118,11 @@ def get_rag_pipeline() -> RAGPipeline:
 def get_ingestion_service() -> IngestionService:
     """Return the ingestion service backed by the shared development store."""
     return _development_application_state.ingestion_service
+
+
+def get_document_catalog() -> DocumentCatalog:
+    """Return the catalog shared with the development ingestion service."""
+    return _development_application_state.document_catalog
 
 
 def reset_development_application_state() -> None:

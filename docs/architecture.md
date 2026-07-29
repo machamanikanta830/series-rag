@@ -65,6 +65,19 @@ API-specific ingestion statistics. The default ingestion and query dependencies
 share one explicitly resettable in-memory development state, so uploaded content
 can be retrieved later in the same application process without external services.
 
+### Document catalog
+
+The document catalog stores immutable document metadata and source-ordered chunks
+after successful ingestion. `GET /documents` lists entries in upload order, and
+`GET /documents/{document_id}` returns one entry with its chunks. These endpoints
+never expose embeddings and do not inspect vector-store internals.
+
+The catalog is deliberately separate from the `VectorStore` interface: vector
+stores own similarity-search data, while the catalog owns document-management
+metadata and upload ordering. The default development configuration uses an
+in-memory catalog shared with `IngestionService`. A future durable catalog can
+replace it without changing the in-memory or Qdrant retrieval implementations.
+
 ### In-memory retrieval
 
 The current in-memory vector store keeps each `Chunk` and its embedding in a

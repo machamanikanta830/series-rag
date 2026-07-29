@@ -7,6 +7,7 @@ from app.chunking import (
     DEFAULT_CHUNK_SIZE,
     chunk_document,
 )
+from app.document_catalog import DocumentCatalog
 from app.embeddings.base import EmbeddingProvider
 from app.models import Document
 from app.normalization import normalize_text
@@ -32,12 +33,14 @@ class IngestionService:
         vector_store: VectorStore,
         chunk_size: int = DEFAULT_CHUNK_SIZE,
         chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
+        document_catalog: DocumentCatalog | None = None,
     ) -> None:
         """Store injected dependencies and explicit chunking configuration."""
         self._embedding_provider = embedding_provider
         self._vector_store = vector_store
         self._chunk_size = chunk_size
         self._chunk_overlap = chunk_overlap
+        self._document_catalog = document_catalog
 
     def ingest(self, document: Document) -> IngestionStatistics:
         """Normalize and store one document's chunk embeddings."""
@@ -60,6 +63,9 @@ class IngestionService:
                 [chunk.text for chunk in chunks]
             )
             self._vector_store.upsert(chunks, embeddings)
+
+        if self._document_catalog is not None:
+            self._document_catalog.record(normalized_document, chunks)
 
         return IngestionStatistics(
             document_id=document.document_id,

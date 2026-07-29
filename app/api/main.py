@@ -5,15 +5,23 @@ from typing import Annotated
 
 from fastapi import Depends, FastAPI, File, HTTPException, UploadFile, status
 
-from app.api.dependencies import get_ingestion_service, get_rag_pipeline
+from app.api.dependencies import (
+    get_document_catalog,
+    get_ingestion_service,
+    get_rag_pipeline,
+)
 from app.api.models import (
     ApiMetadataResponse,
+    DocumentChunkResponse,
+    DocumentDetailResponse,
     DocumentIngestionResponse,
+    DocumentSummaryResponse,
     HealthResponse,
     QueryRequest,
     QueryResponse,
     SourceResponse,
 )
+from app.document_catalog import CatalogDocument, DocumentCatalog
 from app.identifiers import create_document_id
 from app.models import Document
 from app.normalization import normalize_text
@@ -114,6 +122,50 @@ async def upload_document(
     )
 
 
+@app.get("/documents", response_model=list[DocumentSummaryResponse])
+def list_documents(
+    document_catalog: Annotated[
+        DocumentCatalog,
+        Depends(get_document_catalog),
+    ],
+) -> list[DocumentSummaryResponse]:
+    """Return ingested document metadata in original upload order."""
+    try:
+        catalog_documents = document_catalog.list_documents()
+    except Exception as error:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="The document catalog could not be read.",
+        ) from error
+
+    return [_to_document_summary(entry) for entry in catalog_documents]
+
+
+@app.get("/documents/{document_id}", response_model=DocumentDetailResponse)
+def get_document(
+    document_id: str,
+    document_catalog: Annotated[
+        DocumentCatalog,
+        Depends(get_document_catalog),
+    ],
+) -> DocumentDetailResponse:
+    """Return one ingested document and its chunks without vector data."""
+    try:
+        catalog_document = document_catalog.get_document(document_id)
+    except Exception as error:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="The document catalog could not be read.",
+        ) from error
+
+    if catalog_document is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found.",
+        )
+    return _to_document_detail(catalog_document)
+
+
 @app.post("/query", response_model=QueryResponse)
 def query_rag(
     request: QueryRequest,
@@ -157,6 +209,30 @@ def _validate_upload_filename(uploaded_filename: str | None) -> str:
             detail="Only .txt, .md, and .markdown files are supported.",
         )
     return filename
+
+
+def _to_document_summary(entry: CatalogDocument) -> DocumentSummaryResponse:
+    """Serialize one catalog entry without exposing its chunks or vectors."""
+    return DocumentSummaryResponse(
+        document_id=entry.document.document_id,
+        filename=entry.document.source_name,
+        chunk_count=len(entry.chunks),
+    )
+
+
+def _to_document_detail(entry: CatalogDocument) -> DocumentDetailResponse:
+    """Serialize one catalog entry and its already ordered chunks."""
+    return DocumentDetailResponse(
+        **_to_document_summary(entry).model_dump(),
+        chunks=[
+            DocumentChunkResponse(
+                chunk_id=chunk.chunk_id,
+                chunk_index=chunk.chunk_index,
+                text=chunk.text,
+            )
+            for chunk in entry.chunks
+        ],
+    )
 
 
 def _to_query_response(result: RAGPipelineResult) -> QueryResponse:
