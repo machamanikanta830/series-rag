@@ -4,6 +4,7 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
+from app.document_catalog import InMemoryDocumentCatalog
 from app.embeddings.base import EmbeddingProvider
 from app.models import Chunk, Document
 from app.services.ingestion import IngestionService, IngestionStatistics
@@ -130,6 +131,29 @@ def test_statistics_are_immutable() -> None:
 
     with pytest.raises(FrozenInstanceError):
         statistics.chunks_created = 99  # type: ignore[misc]
+
+
+def test_successful_ingestion_records_normalized_document_and_chunks() -> None:
+    """The optional catalog receives final source metadata after vector storage."""
+    provider = FakeEmbeddingProvider()
+    store = InMemoryVectorStore()
+    catalog = InMemoryDocumentCatalog()
+    service = IngestionService(
+        provider,
+        store,
+        chunk_size=3,
+        chunk_overlap=1,
+        document_catalog=catalog,
+    )
+
+    service.ingest(_document(" one   two\r\nthree four five "))
+
+    [entry] = catalog.list_documents()
+    assert entry.document.text == "one two\nthree four five"
+    assert [chunk.text for chunk in entry.chunks] == [
+        "one two three",
+        "three four five",
+    ]
 
 
 def test_repeated_ingestion_replaces_existing_chunks_without_duplicates() -> None:

@@ -103,6 +103,22 @@ Supported extensions are `.txt`, `.md`, and `.markdown`; uploads are limited to
 1 MB. Uploaded documents and vectors remain in memory for the application
 process and are not persisted.
 
+List uploaded documents in their original upload order:
+
+```bash
+curl http://localhost:8000/documents
+```
+
+Inspect one document and its source-ordered chunks:
+
+```bash
+curl http://localhost:8000/documents/{document_id}
+```
+
+Catalog responses contain document and chunk metadata but never expose embedding
+vectors. The catalog is in memory and resets when the application process
+restarts.
+
 The ingestion and search commands will be added in later milestones:
 
 ```bash

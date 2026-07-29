@@ -191,3 +191,20 @@ questions, not to produce formal documentation.
 - How should application state move from in-memory development storage to a
   durable deployment configuration?
 - Which document-level metadata will future filtering and source management need?
+
+## Milestone 11A
+
+### Learned
+
+- Document-management metadata has different access patterns from vector
+  similarity search and benefits from a separate catalog boundary.
+- Recording normalized documents and ordered chunks after successful ingestion
+  makes read-only inspection independent of embedding storage internals.
+- FastAPI response models can expose useful source details without leaking
+  embeddings or internal domain representations.
+
+### Questions
+
+- Which durable storage should eventually replace the in-memory document catalog?
+- How should source replacement and deletion coordinate catalog entries and
+  vector-store chunks atomically?
