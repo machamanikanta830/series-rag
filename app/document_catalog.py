@@ -1,4 +1,4 @@
-"""Read-only document metadata storage with an explicit ingestion write boundary."""
+"""Document metadata storage with explicit ingestion and deletion boundaries."""
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -29,6 +29,10 @@ class DocumentCatalog(ABC):
     def get_document(self, document_id: str) -> CatalogDocument | None:
         """Return one catalog entry, or ``None`` when it does not exist."""
 
+    @abstractmethod
+    def delete_document(self, document_id: str) -> CatalogDocument | None:
+        """Remove and return one entry, or return ``None`` when already absent."""
+
 
 class InMemoryDocumentCatalog(DocumentCatalog):
     """Keep immutable document entries in insertion order for local development."""
@@ -54,3 +58,7 @@ class InMemoryDocumentCatalog(DocumentCatalog):
     def get_document(self, document_id: str) -> CatalogDocument | None:
         """Look up one document without exposing mutable internal state."""
         return self._documents.get(document_id)
+
+    def delete_document(self, document_id: str) -> CatalogDocument | None:
+        """Remove one entry idempotently and return its immutable snapshot."""
+        return self._documents.pop(document_id, None)

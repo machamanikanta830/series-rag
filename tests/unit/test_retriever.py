@@ -64,6 +64,10 @@ class RecordingVectorStore(VectorStore):
         self.search_calls.append((query_embedding, top_k))
         return self._results
 
+    def delete_document(self, document_id: str) -> None:
+        """This unit-test store is only used for searches."""
+        raise AssertionError(f"delete_document was called with {document_id!r}")
+
 
 def test_retrieve_strips_query_and_returns_store_results_unchanged() -> None:
     """The retriever delegates exactly once and preserves result identity and order."""
@@ -183,3 +187,7 @@ class FailingVectorStore(VectorStore):
     ) -> list[SearchResult]:
         """Raise the error whose propagation the test verifies."""
         raise RuntimeError("search failed")
+
+    def delete_document(self, document_id: str) -> None:
+        """This fake never deletes documents."""
+        raise AssertionError(f"delete_document was called with {document_id!r}")

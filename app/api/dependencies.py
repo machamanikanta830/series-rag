@@ -10,6 +10,7 @@ from app.models import Chunk
 from app.pipeline.rag_pipeline import RAGPipeline
 from app.prompts.builder import PromptBuilder
 from app.retrieval.retriever import SemanticRetriever
+from app.services.deletion import DocumentDeletionService
 from app.services.ingestion import IngestionService
 from app.vector_stores.in_memory import InMemoryVectorStore
 
@@ -53,6 +54,7 @@ class _DevelopmentApplicationState:
     rag_pipeline: RAGPipeline
     ingestion_service: IngestionService
     document_catalog: DocumentCatalog
+    deletion_service: DocumentDeletionService
 
 
 def _build_development_application_state() -> _DevelopmentApplicationState:
@@ -100,10 +102,12 @@ def _build_development_application_state() -> _DevelopmentApplicationState:
         vector_store,
         document_catalog=document_catalog,
     )
+    deletion_service = DocumentDeletionService(document_catalog, vector_store)
     return _DevelopmentApplicationState(
         rag_pipeline,
         ingestion_service,
         document_catalog,
+        deletion_service,
     )
 
 
@@ -123,6 +127,11 @@ def get_ingestion_service() -> IngestionService:
 def get_document_catalog() -> DocumentCatalog:
     """Return the catalog shared with the development ingestion service."""
     return _development_application_state.document_catalog
+
+
+def get_document_deletion_service() -> DocumentDeletionService:
+    """Return the deletion service sharing the development catalog and vectors."""
+    return _development_application_state.deletion_service
 
 
 def reset_development_application_state() -> None:

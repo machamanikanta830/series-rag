@@ -67,6 +67,16 @@ class InMemoryVectorStore(VectorStore):
         )
         return ranked_results[:top_k]
 
+    def delete_document(self, document_id: str) -> None:
+        """Remove every matching chunk without touching unrelated entries."""
+        matching_chunk_ids = [
+            chunk_id
+            for chunk_id, (chunk, _) in self._entries.items()
+            if chunk.document_id == document_id
+        ]
+        for chunk_id in matching_chunk_ids:
+            del self._entries[chunk_id]
+
 
 def _validate_batch(
     embeddings: list[list[float]],

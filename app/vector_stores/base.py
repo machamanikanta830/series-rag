@@ -17,3 +17,7 @@ class VectorStore(ABC):
         self, query_embedding: list[float], top_k: int = 5
     ) -> list[SearchResult]:
         """Return up to ``top_k`` chunks ordered by descending similarity."""
+
+    @abstractmethod
+    def delete_document(self, document_id: str) -> None:
+        """Idempotently remove every chunk belonging to one document."""

@@ -134,6 +134,24 @@ class QdrantVectorStore(VectorStore):
         ]
         return sorted(results, key=lambda result: result.score, reverse=True)
 
+    def delete_document(self, document_id: str) -> None:
+        """Delete every point whose payload belongs to the document."""
+        self.ensure_collection()
+        self._client.delete(
+            collection_name=self._collection_name,
+            points_selector=models.FilterSelector(
+                filter=models.Filter(
+                    must=[
+                        models.FieldCondition(
+                            key="document_id",
+                            match=models.MatchValue(value=document_id),
+                        )
+                    ]
+                )
+            ),
+            wait=True,
+        )
+
 
 def _validate_embedding(embedding: list[float], expected_dimension: int) -> list[float]:
     """Copy one finite vector after checking its exact collection dimension."""

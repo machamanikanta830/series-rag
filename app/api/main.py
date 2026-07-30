@@ -4,9 +4,11 @@ from pathlib import Path
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, File, HTTPException, UploadFile, status
+from fastapi.responses import Response
 
 from app.api.dependencies import (
     get_document_catalog,
+    get_document_deletion_service,
     get_ingestion_service,
     get_rag_pipeline,
 )
@@ -26,6 +28,7 @@ from app.identifiers import create_document_id
 from app.models import Document
 from app.normalization import normalize_text
 from app.pipeline.rag_pipeline import RAGPipeline, RAGPipelineResult
+from app.services.deletion import DocumentDeletionService
 from app.services.ingestion import IngestionService
 
 API_TITLE = "SeriesRAG API"
@@ -164,6 +167,34 @@ def get_document(
             detail="Document not found.",
         )
     return _to_document_detail(catalog_document)
+
+
+@app.delete(
+    "/documents/{document_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_document(
+    document_id: str,
+    deletion_service: Annotated[
+        DocumentDeletionService,
+        Depends(get_document_deletion_service),
+    ],
+) -> Response:
+    """Delete one cataloged document and all of its stored vectors."""
+    try:
+        document_existed = deletion_service.delete(document_id)
+    except Exception as error:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="The document could not be deleted.",
+        ) from error
+
+    if not document_existed:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found.",
+        )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @app.post("/query", response_model=QueryResponse)
