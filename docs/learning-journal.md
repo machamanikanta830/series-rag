@@ -208,3 +208,20 @@ questions, not to produce formal documentation.
 - Which durable storage should eventually replace the in-memory document catalog?
 - How should source replacement and deletion coordinate catalog entries and
   vector-store chunks atomically?
+
+## Milestone 11B
+
+### Learned
+
+- Cross-store deletion belongs in an orchestration service rather than an HTTP
+  endpoint or one storage implementation.
+- Idempotent storage deletion allows safe retries while the API can still return
+  HTTP 404 for an already-missing document.
+- A catalog snapshot can compensate for a local vector-deletion failure, but it
+  cannot provide a true distributed transaction with a remote vector database.
+
+### Questions
+
+- When would deletion volume justify background retries or an operation log?
+- How should a durable system reconcile catalog records with vectors after an
+  uncertain remote failure?

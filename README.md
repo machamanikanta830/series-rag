@@ -119,6 +119,16 @@ Catalog responses contain document and chunk metadata but never expose embedding
 vectors. The catalog is in memory and resets when the application process
 restarts.
 
+Delete an uploaded document and all of its stored chunk vectors:
+
+```bash
+curl -i -X DELETE http://localhost:8000/documents/{document_id}
+```
+
+A successful deletion returns HTTP 204 with no response body. An unknown or
+already-deleted document returns HTTP 404. Deletion affects the in-process
+catalog and vector store together; it does not delete source files from disk.
+
 The ingestion and search commands will be added in later milestones:
 
 ```bash

@@ -78,6 +78,25 @@ metadata and upload ordering. The default development configuration uses an
 in-memory catalog shared with `IngestionService`. A future durable catalog can
 replace it without changing the in-memory or Qdrant retrieval implementations.
 
+### Document deletion service
+
+`DocumentDeletionService` coordinates `DELETE /documents/{document_id}` without
+putting storage logic in the HTTP adapter. It removes the catalog entry and then
+delegates removal of every matching chunk to the configured `VectorStore`.
+Both the in-memory and Qdrant implementations expose the same idempotent
+document-deletion operation. Qdrant selects points by the `document_id` stored
+in each chunk payload.
+
+For the in-memory development configuration, deletion is synchronous and
+all-or-nothing. The service keeps the immutable catalog entry as a compensation
+snapshot: if vector deletion raises, it records the document and chunks back
+into the catalog before propagating the original error. A catalog failure occurs
+before vector deletion, so vectors remain untouched. With a remote vector
+database, a network failure can make the server-side outcome uncertain; the
+catalog compensation is therefore best-effort rather than a distributed
+transaction. Durable deployments would need a transactional outbox, retryable
+operation log, or reconciliation process if that requirement appears.
+
 ### In-memory retrieval
 
 The current in-memory vector store keeps each `Chunk` and its embedding in a

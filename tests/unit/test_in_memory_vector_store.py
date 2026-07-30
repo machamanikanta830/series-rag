@@ -186,3 +186,25 @@ def test_search_results_preserve_chunk_metadata() -> None:
     [result] = store.search([1.0, 0.0])
     assert result.chunk is chunk
     assert result.chunk.metadata == {"topic": "security"}
+
+
+def test_delete_document_removes_matching_chunks_and_is_idempotent() -> None:
+    """Document deletion removes all matching vectors and tolerates repeats."""
+    first_chunk = _chunk("first")
+    second_chunk = Chunk(
+        chunk_id="second",
+        document_id="document-2",
+        source_name="other.txt",
+        text="Other document.",
+        chunk_index=0,
+        start_word=0,
+        end_word=2,
+    )
+    store = InMemoryVectorStore()
+    store.upsert([first_chunk, second_chunk], [[1.0, 0.0], [0.0, 1.0]])
+
+    store.delete_document("document-1")
+    store.delete_document("document-1")
+
+    [result] = store.search([1.0, 0.0], top_k=10)
+    assert result.chunk == second_chunk
