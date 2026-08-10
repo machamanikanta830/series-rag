@@ -16,7 +16,7 @@ production chatbot or user interface.
 Phase 1 implements this path:
 
 ```text
-.txt and .md files
+.txt, .md, and native-text .pdf files
   → conservative normalization
   → fixed-size, word-based chunks
   → sentence-transformer embeddings
@@ -43,7 +43,7 @@ The required components are:
 
 - No production chatbot or user interface
 - No OpenAI API, LangChain, or LlamaIndex
-- No PDF or DOCX ingestion
+- No OCR, scanned/image-only PDF extraction, or DOCX ingestion
 - No React, PostgreSQL, Redis, Celery, or Kubernetes
 - No committed model files, Qdrant data, secrets, virtual environments, caches,
   or private source transcripts
@@ -92,16 +92,24 @@ source chunks with their similarity scores. The default dependency uses a small
 offline development corpus and deterministic fake generation; it is not
 production configuration.
 
-Upload one small UTF-8 text or Markdown document for in-process ingestion:
+Upload one small UTF-8 text, Markdown, or native-text PDF document for
+in-process ingestion:
 
 ```bash
 curl -X POST http://localhost:8000/documents \
   -F "file=@sample-data/example.md"
 ```
 
-Supported extensions are `.txt`, `.md`, and `.markdown`; uploads are limited to
-1 MB. Uploaded documents and vectors remain in memory for the application
-process and are not persisted.
+Supported extensions are `.txt`, `.md`, `.markdown`, and `.pdf`; uploads are
+limited to 1 MB. PDF text is extracted page by page, and each resulting chunk
+keeps its one-based page number and original filename in metadata. Chunking
+resets at page boundaries so a chunk never receives ambiguous multi-page
+provenance.
+
+Only PDFs containing extractable native text are supported. Scanned or
+image-only PDFs require OCR and return HTTP 422; OCR is intentionally outside
+this milestone. Uploaded documents and vectors remain in memory for the
+application process and are not persisted.
 
 List uploaded documents in their original upload order:
 

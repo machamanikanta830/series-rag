@@ -90,15 +90,15 @@ def test_supported_text_upload_returns_created_response(filename: str) -> None:
 
 
 def test_upload_rejects_an_unsupported_extension_regardless_of_mime_type() -> None:
-    """A trusted-looking MIME type cannot make a PDF a supported text source."""
+    """A trusted-looking MIME type cannot make DOCX a supported source."""
     response = client.post(
         "/documents",
-        files={"file": ("lesson.pdf", b"not a PDF", "text/plain")},
+        files={"file": ("lesson.docx", b"not DOCX", "application/pdf")},
     )
 
     assert response.status_code == 415
     assert response.json() == {
-        "detail": "Only .txt, .md, and .markdown files are supported."
+        "detail": "Only .txt, .md, .markdown, and .pdf files are supported."
     }
 
 
