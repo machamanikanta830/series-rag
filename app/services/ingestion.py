@@ -9,7 +9,7 @@ from app.chunking import (
 )
 from app.document_catalog import DocumentCatalog
 from app.embeddings.base import EmbeddingProvider
-from app.models import Document
+from app.models import Document, DocumentSection
 from app.normalization import normalize_text
 from app.vector_stores.base import VectorStore
 
@@ -44,12 +44,14 @@ class IngestionService:
 
     def ingest(self, document: Document) -> IngestionStatistics:
         """Normalize and store one document's chunk embeddings."""
+        normalized_sections = _normalize_sections(document.sections)
         normalized_document = Document(
             document_id=document.document_id,
             source_name=document.source_name,
             source_path=document.source_path,
             text=normalize_text(document.text),
             metadata=document.metadata,
+            sections=normalized_sections,
         )
         chunks = chunk_document(
             normalized_document,
@@ -73,3 +75,20 @@ class IngestionService:
             embedding_dimension=embedding_dimension,
             vector_store_name=type(self._vector_store).__name__,
         )
+
+
+def _normalize_sections(
+    sections: tuple[DocumentSection, ...],
+) -> tuple[DocumentSection, ...]:
+    """Normalize nonempty sections without discarding their provenance metadata."""
+    normalized_sections: list[DocumentSection] = []
+    for section in sections:
+        normalized_text = normalize_text(section.text)
+        if normalized_text:
+            normalized_sections.append(
+                DocumentSection(
+                    text=normalized_text,
+                    metadata=section.metadata,
+                )
+            )
+    return tuple(normalized_sections)

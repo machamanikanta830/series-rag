@@ -9,7 +9,7 @@ results can be inspected and tested without relying on a large framework.
 Phase 1 establishes semantic search without an LLM. The intended data flow is:
 
 ```text
-.txt / .md source files
+.txt / .md / native-text .pdf source files
   → file loading
   → conservative text normalization
   → fixed-size word chunking
@@ -58,12 +58,31 @@ that normalize to empty text produce no chunks and no vector-store write.
 
 ### Document upload adapter
 
-`POST /documents` accepts one bounded `.txt`, `.md`, or `.markdown` multipart
-upload, validates its filename and UTF-8 content, creates a deterministic
-immutable `Document`, and delegates to `IngestionService`. The response exposes
-API-specific ingestion statistics. The default ingestion and query dependencies
-share one explicitly resettable in-memory development state, so uploaded content
-can be retrieved later in the same application process without external services.
+`POST /documents` accepts one bounded `.txt`, `.md`, `.markdown`, or `.pdf`
+multipart upload and validates the filename extension independently of its MIME
+type. Text formats retain their existing UTF-8 path. PDF bytes are passed to the
+dedicated parser before the resulting immutable `Document` is delegated to
+`IngestionService`. The response exposes API-specific ingestion statistics. The
+default ingestion and query dependencies share one explicitly resettable
+in-memory development state, so uploaded content can be retrieved later in the
+same application process without external services.
+
+### Native-text PDF parser
+
+`app.parsers.pdf` opens bounded in-memory PDF bytes with PyMuPDF and extracts
+plain text one page at a time. It never invokes PyMuPDF's OCR facilities. Blank
+pages are omitted from content while later pages keep their physical one-based
+page numbers. Malformed, password-protected, unreadable, and no-text PDFs become
+stable parser errors that the HTTP adapter maps to HTTP 422.
+
+`Document.sections` is a backward-compatible immutable sequence for content with
+more specific provenance. Each nonempty PDF page becomes one section. During
+chunking, document metadata such as the original filename is merged with the
+section's `page_number`. Chunking restarts at every section boundary, so chunks
+never span pages. This can produce smaller chunks near page boundaries, but it
+keeps page attribution explicit and avoids introducing a more complex span model.
+The resulting chunks continue through the existing embedding, vector-storage,
+retrieval, context, and generation components unchanged.
 
 ### Document catalog
 
@@ -201,8 +220,8 @@ After Phase 1, future phases may evolve the project in this order:
    source updates, and reproducible collection metadata.
 3. **Answer generation:** add a carefully scoped, source-grounded answer layer
    only after retrieval quality is understood.
-4. **Additional source types:** consider formats such as PDF or DOCX only when a
-   concrete need justifies their parsing complexity.
+4. **Additional source types:** consider OCR for scanned PDFs or formats such as
+   DOCX only when a concrete need justifies their parsing complexity.
 5. **User experience:** consider an API or interface only after the command-line
    workflow and retrieval behavior are reliable.
 

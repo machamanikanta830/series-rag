@@ -4,7 +4,7 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
-from app.models import Chunk, Document, SearchResult
+from app.models import Chunk, Document, DocumentSection, SearchResult
 
 
 def test_document_and_metadata_are_immutable() -> None:
@@ -50,3 +50,23 @@ def test_search_result_is_immutable() -> None:
 
     with pytest.raises(FrozenInstanceError):
         result.score = 0.1
+
+
+def test_document_sections_and_their_metadata_are_immutable() -> None:
+    """Page-aware sections cannot be reordered or have metadata rewritten."""
+    section_metadata = {"page_number": "1"}
+    sections = [DocumentSection(text="Page text.", metadata=section_metadata)]
+
+    document = Document(
+        document_id="document-1",
+        source_name="lesson.pdf",
+        source_path="lesson.pdf",
+        text="Page text.",
+        sections=tuple(sections),
+    )
+    section_metadata["page_number"] = "2"
+    sections.clear()
+
+    assert document.sections[0].metadata == {"page_number": "1"}
+    with pytest.raises(TypeError):
+        document.sections[0].metadata["page_number"] = "2"

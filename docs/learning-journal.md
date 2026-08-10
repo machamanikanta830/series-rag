@@ -225,3 +225,20 @@ questions, not to produce formal documentation.
 - When would deletion volume justify background retries or an operation log?
 - How should a durable system reconcile catalog records with vectors after an
   uncertain remote failure?
+
+## Milestone 12A
+
+### Learned
+
+- Native PDF text extraction and OCR are separate capabilities; page text can be
+  read directly without rendering or recognizing images.
+- Page-aware document sections let the existing chunker preserve provenance
+  without adding PDF-specific fields to every domain model.
+- Resetting chunks at page boundaries trades some chunk packing efficiency for
+  unambiguous one-page citations.
+
+### Questions
+
+- How should future citations expose page metadata through public API responses?
+- When would a multi-page span model improve retrieval enough to justify its
+  additional complexity?

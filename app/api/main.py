@@ -27,6 +27,11 @@ from app.document_catalog import CatalogDocument, DocumentCatalog
 from app.identifiers import create_document_id
 from app.models import Document
 from app.normalization import normalize_text
+from app.parsers.pdf import (
+    PDFNoExtractableTextError,
+    PDFParsingError,
+    parse_pdf,
+)
 from app.pipeline.rag_pipeline import RAGPipeline, RAGPipelineResult
 from app.services.deletion import DocumentDeletionService
 from app.services.ingestion import IngestionService
@@ -35,7 +40,7 @@ API_TITLE = "SeriesRAG API"
 API_DESCRIPTION = "A learning-focused, source-grounded RAG API."
 API_VERSION = "0.1.0"
 MAX_UPLOAD_BYTES = 1_048_576
-_SUPPORTED_UPLOAD_EXTENSIONS = frozenset({".txt", ".md", ".markdown"})
+_SUPPORTED_UPLOAD_EXTENSIONS = frozenset({".txt", ".md", ".markdown", ".pdf"})
 
 app = FastAPI(
     title=API_TITLE,
@@ -72,7 +77,7 @@ async def upload_document(
         Depends(get_ingestion_service),
     ],
 ) -> DocumentIngestionResponse:
-    """Validate and synchronously ingest one bounded UTF-8 text upload."""
+    """Validate and synchronously ingest one bounded supported document."""
     filename = _validate_upload_filename(file.filename)
     content = await file.read(MAX_UPLOAD_BYTES + 1)
     if len(content) > MAX_UPLOAD_BYTES:
@@ -81,28 +86,7 @@ async def upload_document(
             detail="Uploaded file exceeds the 1 MB size limit.",
         )
 
-    try:
-        decoded_text = content.decode("utf-8-sig")
-    except UnicodeDecodeError as error:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail="Uploaded file must contain valid UTF-8 text.",
-        ) from error
-
-    normalized_text = normalize_text(decoded_text)
-    if not normalized_text:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail="Uploaded file must contain non-empty text.",
-        )
-
-    document = Document(
-        document_id=create_document_id(filename, normalized_text),
-        source_name=filename,
-        source_path=filename,
-        text=decoded_text,
-        metadata={"filename": filename},
-    )
+    document = _parse_uploaded_document(filename, content)
     try:
         statistics = ingestion_service.ingest(document)
     except ValueError as error:
@@ -220,7 +204,7 @@ def query_rag(
 
 
 def _validate_upload_filename(uploaded_filename: str | None) -> str:
-    """Return a safe basename with an explicitly supported text extension."""
+    """Return a safe basename with an explicitly supported extension."""
     if uploaded_filename is None:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
@@ -237,9 +221,52 @@ def _validate_upload_filename(uploaded_filename: str | None) -> str:
     if Path(filename).suffix.lower() not in _SUPPORTED_UPLOAD_EXTENSIONS:
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail="Only .txt, .md, and .markdown files are supported.",
+            detail="Only .txt, .md, .markdown, and .pdf files are supported.",
         )
     return filename
+
+
+def _parse_uploaded_document(filename: str, content: bytes) -> Document:
+    """Create one document through the parser appropriate to its extension."""
+    if Path(filename).suffix.lower() == ".pdf":
+        try:
+            return parse_pdf(content, filename)
+        except PDFNoExtractableTextError as error:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail=(
+                    "Uploaded PDF contains no extractable text. "
+                    "Scanned or image-only PDFs are not supported."
+                ),
+            ) from error
+        except PDFParsingError as error:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="Uploaded PDF is malformed, password-protected, or unreadable.",
+            ) from error
+
+    try:
+        decoded_text = content.decode("utf-8-sig")
+    except UnicodeDecodeError as error:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Uploaded file must contain valid UTF-8 text.",
+        ) from error
+
+    normalized_text = normalize_text(decoded_text)
+    if not normalized_text:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Uploaded file must contain non-empty text.",
+        )
+
+    return Document(
+        document_id=create_document_id(filename, normalized_text),
+        source_name=filename,
+        source_path=filename,
+        text=decoded_text,
+        metadata={"filename": filename},
+    )
 
 
 def _to_document_summary(entry: CatalogDocument) -> DocumentSummaryResponse:

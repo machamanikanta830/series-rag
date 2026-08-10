@@ -13,6 +13,18 @@ def _freeze_metadata(metadata: Metadata) -> Metadata:
 
 
 @dataclass(frozen=True, slots=True)
+class DocumentSection:
+    """One traceable part of a document with section-specific metadata."""
+
+    text: str
+    metadata: Metadata = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        """Protect section metadata from mutation after creation."""
+        object.__setattr__(self, "metadata", _freeze_metadata(self.metadata))
+
+
+@dataclass(frozen=True, slots=True)
 class Document:
     """One normalized source document ready to be chunked."""
 
@@ -21,10 +33,12 @@ class Document:
     source_path: str
     text: str
     metadata: Metadata = field(default_factory=dict)
+    sections: tuple[DocumentSection, ...] = ()
 
     def __post_init__(self) -> None:
-        """Protect metadata from mutation after document creation."""
+        """Protect metadata and section ordering after document creation."""
         object.__setattr__(self, "metadata", _freeze_metadata(self.metadata))
+        object.__setattr__(self, "sections", tuple(self.sections))
 
 
 @dataclass(frozen=True, slots=True)
