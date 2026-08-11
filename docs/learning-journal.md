@@ -242,3 +242,21 @@ questions, not to produce formal documentation.
 - How should future citations expose page metadata through public API responses?
 - When would a multi-page span model improve retrieval enough to justify its
   additional complexity?
+
+## Milestone 13A
+
+### Learned
+
+- DOCX body paragraphs and tables can be traversed in document order without
+  inspecting private XML structures.
+- Generic document sections can represent both page provenance and structural
+  provenance without introducing format-specific chunk models.
+- Deterministic pipe-separated table text preserves row readability while
+  remaining compatible with plain-text normalization and embeddings.
+
+### Questions
+
+- Should headings eventually be grouped with their following paragraphs for
+  retrieval, or remain independent traceable sections?
+- Which DOCX structures would justify expanding extraction beyond body
+  paragraphs and tables?

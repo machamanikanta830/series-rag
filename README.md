@@ -16,7 +16,7 @@ production chatbot or user interface.
 Phase 1 implements this path:
 
 ```text
-.txt, .md, and native-text .pdf files
+.txt, .md, native-text .pdf, and native .docx files
   → conservative normalization
   → fixed-size, word-based chunks
   → sentence-transformer embeddings
@@ -43,7 +43,7 @@ The required components are:
 
 - No production chatbot or user interface
 - No OpenAI API, LangChain, or LlamaIndex
-- No OCR, scanned/image-only PDF extraction, or DOCX ingestion
+- No OCR, scanned/image-only PDF extraction, legacy `.doc`, or other Office formats
 - No React, PostgreSQL, Redis, Celery, or Kubernetes
 - No committed model files, Qdrant data, secrets, virtual environments, caches,
   or private source transcripts
@@ -92,7 +92,7 @@ source chunks with their similarity scores. The default dependency uses a small
 offline development corpus and deterministic fake generation; it is not
 production configuration.
 
-Upload one small UTF-8 text, Markdown, or native-text PDF document for
+Upload one small UTF-8 text, Markdown, native-text PDF, or DOCX document for
 in-process ingestion:
 
 ```bash
@@ -100,16 +100,22 @@ curl -X POST http://localhost:8000/documents \
   -F "file=@sample-data/example.md"
 ```
 
-Supported extensions are `.txt`, `.md`, `.markdown`, and `.pdf`; uploads are
-limited to 1 MB. PDF text is extracted page by page, and each resulting chunk
-keeps its one-based page number and original filename in metadata. Chunking
-resets at page boundaries so a chunk never receives ambiguous multi-page
-provenance.
+Supported extensions are `.txt`, `.md`, `.markdown`, `.pdf`, and `.docx`;
+uploads are limited to 1 MB. PDF text is extracted page by page, and each
+resulting chunk keeps its one-based page number and original filename in
+metadata. Chunking resets at page boundaries so a chunk never receives ambiguous
+multi-page provenance.
 
 Only PDFs containing extractable native text are supported. Scanned or
 image-only PDFs require OCR and return HTTP 422; OCR is intentionally outside
 this milestone. Uploaded documents and vectors remain in memory for the
 application process and are not persisted.
+
+DOCX extraction supports body headings, paragraphs, and tables in document
+order. Tables become deterministic pipe-separated plain text. Images,
+headers/footers, comments, tracked-change metadata, embedded files, legacy
+`.doc`, and other Office formats are not extracted. DOCX sections preserve a
+structural `section_type`; page numbers are never invented.
 
 List uploaded documents in their original upload order:
 

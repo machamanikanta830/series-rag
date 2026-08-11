@@ -90,15 +90,21 @@ def test_supported_text_upload_returns_created_response(filename: str) -> None:
 
 
 def test_upload_rejects_an_unsupported_extension_regardless_of_mime_type() -> None:
-    """A trusted-looking MIME type cannot make DOCX a supported source."""
+    """A trusted-looking MIME type cannot make legacy DOC a supported source."""
     response = client.post(
         "/documents",
-        files={"file": ("lesson.docx", b"not DOCX", "application/pdf")},
+        files={
+            "file": (
+                "lesson.doc",
+                b"not a legacy Word document",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            )
+        },
     )
 
     assert response.status_code == 415
     assert response.json() == {
-        "detail": "Only .txt, .md, .markdown, and .pdf files are supported."
+        "detail": "Only .txt, .md, .markdown, .pdf, and .docx files are supported."
     }
 
 
