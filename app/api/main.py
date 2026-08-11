@@ -27,6 +27,11 @@ from app.document_catalog import CatalogDocument, DocumentCatalog
 from app.identifiers import create_document_id
 from app.models import Document
 from app.normalization import normalize_text
+from app.parsers.docx import (
+    DOCXNoExtractableTextError,
+    DOCXParsingError,
+    parse_docx,
+)
 from app.parsers.pdf import (
     PDFNoExtractableTextError,
     PDFParsingError,
@@ -40,7 +45,7 @@ API_TITLE = "SeriesRAG API"
 API_DESCRIPTION = "A learning-focused, source-grounded RAG API."
 API_VERSION = "0.1.0"
 MAX_UPLOAD_BYTES = 1_048_576
-_SUPPORTED_UPLOAD_EXTENSIONS = frozenset({".txt", ".md", ".markdown", ".pdf"})
+_SUPPORTED_UPLOAD_EXTENSIONS = frozenset({".txt", ".md", ".markdown", ".pdf", ".docx"})
 
 app = FastAPI(
     title=API_TITLE,
@@ -221,14 +226,15 @@ def _validate_upload_filename(uploaded_filename: str | None) -> str:
     if Path(filename).suffix.lower() not in _SUPPORTED_UPLOAD_EXTENSIONS:
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail="Only .txt, .md, .markdown, and .pdf files are supported.",
+            detail="Only .txt, .md, .markdown, .pdf, and .docx files are supported.",
         )
     return filename
 
 
 def _parse_uploaded_document(filename: str, content: bytes) -> Document:
     """Create one document through the parser appropriate to its extension."""
-    if Path(filename).suffix.lower() == ".pdf":
+    extension = Path(filename).suffix.lower()
+    if extension == ".pdf":
         try:
             return parse_pdf(content, filename)
         except PDFNoExtractableTextError as error:
@@ -243,6 +249,20 @@ def _parse_uploaded_document(filename: str, content: bytes) -> Document:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail="Uploaded PDF is malformed, password-protected, or unreadable.",
+            ) from error
+
+    if extension == ".docx":
+        try:
+            return parse_docx(content, filename)
+        except DOCXNoExtractableTextError as error:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="Uploaded DOCX contains no extractable text.",
+            ) from error
+        except DOCXParsingError as error:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="Uploaded DOCX is malformed or unreadable.",
             ) from error
 
     try:

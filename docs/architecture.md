@@ -9,7 +9,7 @@ results can be inspected and tested without relying on a large framework.
 Phase 1 establishes semantic search without an LLM. The intended data flow is:
 
 ```text
-.txt / .md / native-text .pdf source files
+.txt / .md / native-text .pdf / native .docx source files
   → file loading
   → conservative text normalization
   → fixed-size word chunking
@@ -58,14 +58,14 @@ that normalize to empty text produce no chunks and no vector-store write.
 
 ### Document upload adapter
 
-`POST /documents` accepts one bounded `.txt`, `.md`, `.markdown`, or `.pdf`
-multipart upload and validates the filename extension independently of its MIME
-type. Text formats retain their existing UTF-8 path. PDF bytes are passed to the
-dedicated parser before the resulting immutable `Document` is delegated to
-`IngestionService`. The response exposes API-specific ingestion statistics. The
-default ingestion and query dependencies share one explicitly resettable
-in-memory development state, so uploaded content can be retrieved later in the
-same application process without external services.
+`POST /documents` accepts one bounded `.txt`, `.md`, `.markdown`, `.pdf`, or
+`.docx` multipart upload and validates the filename extension independently of
+its MIME type. Text formats retain their existing UTF-8 path. PDF and DOCX bytes
+are passed to dedicated parsers before the resulting immutable `Document` is
+delegated to `IngestionService`. The response exposes API-specific ingestion
+statistics. The default ingestion and query dependencies share one explicitly
+resettable in-memory development state, so uploaded content can be retrieved
+later in the same application process without external services.
 
 ### Native-text PDF parser
 
@@ -83,6 +83,27 @@ never span pages. This can produce smaller chunks near page boundaries, but it
 keeps page attribution explicit and avoids introducing a more complex span model.
 The resulting chunks continue through the existing embedding, vector-storage,
 retrieval, context, and generation components unchanged.
+
+### Native DOCX parser
+
+`app.parsers.docx` opens bounded in-memory DOCX packages with `python-docx` and
+iterates body paragraphs and tables in document order. Nonempty headings and
+paragraphs become separate `DocumentSection` values. Tables become one section
+whose rows contain deterministic, pipe-separated cell text. This plain-text form
+is inspectable and can enter the existing embedding pipeline without HTML or a
+new rendering layer.
+
+DOCX sections use `section_type` values of `heading`, `paragraph`, or `table`.
+Heading sections also retain their Word heading style. Document-level metadata
+supplies the original filename and `source_type`, which the chunker merges into
+every chunk. DOCX has no reliable page model at this parsing boundary, so no page
+number is invented. Section boundaries remain chunk boundaries, preserving
+structural provenance at the cost of occasionally smaller chunks.
+
+The parser intentionally ignores images, headers and footers, comments,
+tracked-change metadata, embedded files, legacy `.doc`, and other Office formats.
+Malformed packages and documents without supported usable text are rejected
+before ingestion.
 
 ### Document catalog
 
@@ -220,8 +241,8 @@ After Phase 1, future phases may evolve the project in this order:
    source updates, and reproducible collection metadata.
 3. **Answer generation:** add a carefully scoped, source-grounded answer layer
    only after retrieval quality is understood.
-4. **Additional source types:** consider OCR for scanned PDFs or formats such as
-   DOCX only when a concrete need justifies their parsing complexity.
+4. **Additional source types:** consider OCR for scanned PDFs or additional
+   Office formats only when a concrete need justifies their parsing complexity.
 5. **User experience:** consider an API or interface only after the command-line
    workflow and retrieval behavior are reliable.
 
