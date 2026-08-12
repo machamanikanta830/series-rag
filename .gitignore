@@ -18,6 +18,11 @@ dist/
 *.egg
 pip-wheel-metadata/
 
+# Frontend dependencies and build output
+frontend/node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo
+
 # Test, lint, type-check, and coverage caches
 .pytest_cache/
 .ruff_cache/

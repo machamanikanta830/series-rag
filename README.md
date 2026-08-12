@@ -44,7 +44,7 @@ The required components are:
 - No production chatbot or user interface
 - No OpenAI API, LangChain, or LlamaIndex
 - No OCR, scanned/image-only PDF extraction, legacy `.doc`, or other Office formats
-- No React, PostgreSQL, Redis, Celery, or Kubernetes
+- No production frontend features, PostgreSQL, Redis, Celery, or Kubernetes
 - No committed model files, Qdrant data, secrets, virtual environments, caches,
   or private source transcripts
 
@@ -58,6 +58,35 @@ may resolve to a global Conda installation:
 .venv/bin/ruff format --check .
 .venv/bin/mypy
 .venv/bin/pytest
+```
+
+## Frontend foundation
+
+The `frontend/` directory contains a responsive React and TypeScript application
+shell built with Vite, React Router, and Tailwind CSS. It currently provides
+navigation and placeholder pages at:
+
+- `/`
+- `/upload`
+- `/chat`
+- `/documents`
+
+The frontend does not call the SeriesRAG API yet. Upload, chat, and document
+management interactions will be added in later milestones.
+
+Install the frontend packages and start the local development server:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Create a production build with:
+
+```bash
+cd frontend
+npm run build
 ```
 
 ## Local RAG demonstration
