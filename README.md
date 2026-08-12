@@ -71,16 +71,31 @@ navigation and placeholder pages at:
 - `/chat`
 - `/documents`
 
-The frontend does not call the SeriesRAG API yet. Upload, chat, and document
-management interactions will be added in later milestones.
+The upload page now calls the SeriesRAG document-ingestion API. Chat and document
+browsing remain placeholders for later milestones.
 
-Install the frontend packages and start the local development server:
+Start the FastAPI backend from the repository root:
+
+```bash
+.venv/bin/uvicorn app.api.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+In another terminal, install the frontend packages and start Vite:
 
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
+
+Open the local Vite URL, visit `/upload`, choose one supported file under 1 MB,
+and submit it. During local development, Vite proxies `/documents` to FastAPI at
+`http://localhost:8000`, so backend CORS configuration is not required.
+
+`frontend/.env.example` documents `VITE_API_BASE_URL`. Leave it blank for the
+local proxy workflow. Set it to a separately hosted API base URL only when that
+API is configured to allow the frontend's origin; trailing slashes are removed
+by the client.
 
 Create a production build with:
 
