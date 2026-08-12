@@ -1,2 +1,1 @@
-// Backend service adapters will be introduced during API integration.
-export {};
+export { DocumentUploadError, uploadDocument } from "./documents";
