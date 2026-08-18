@@ -65,11 +65,19 @@ page numbers and DOCX section provenance can cross the HTTP boundary. The UI
 handles metadata as an open mapping because not every source type has the same
 provenance fields.
 
+Document deletion follows the same adapter boundary. The selected-document UI
+asks for explicit confirmation, then `deleteDocument` sends
+`DELETE /documents/{document_id}` and treats the empty HTTP 204 response as
+success. The page removes only that document from local state and clears its
+detail selection. A 404 also removes the stale local entry because the backend
+has already reached the desired state; server and network failures leave the
+document visible so the user can retry safely.
+
 During `npm run dev`, Vite proxies `/documents` to the local FastAPI service on
 port 8000. This keeps the local browser request same-origin and avoids adding
 CORS behavior to the backend. `VITE_API_BASE_URL` can replace the relative base
 for environments that host an API separately and configure its allowed origin.
-No chat API integration or document deletion UI exists in this milestone.
+No chat API integration exists in this milestone.
 
 ### Document ingestion service
 

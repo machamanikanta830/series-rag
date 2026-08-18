@@ -82,6 +82,26 @@ export async function getDocument(
   return payload;
 }
 
+export async function deleteDocument(documentId: string): Promise<void> {
+  const { response, payload } = await requestJson(
+    `/documents/${encodeURIComponent(documentId)}`,
+    { method: "DELETE" },
+  );
+  if (response.status === 204) {
+    return;
+  }
+  if (!response.ok) {
+    throw new DocumentApiError(
+      deleteMessageForStatus(response.status, extractErrorDetail(payload)),
+      response.status,
+    );
+  }
+  throw new DocumentApiError(
+    "The API returned an unexpected deletion response. Please try again.",
+    response.status,
+  );
+}
+
 interface JsonResponse {
   response: Response;
   payload: unknown;
@@ -96,7 +116,10 @@ async function requestJson(path: string, init?: RequestInit): Promise<JsonRespon
       "The SeriesRAG API is unreachable. Confirm the backend is running and try again.",
     );
   }
-  return { response, payload: await readJson(response) };
+  return {
+    response,
+    payload: response.status === 204 ? null : await readJson(response),
+  };
 }
 
 async function readJson(response: Response): Promise<unknown> {
@@ -149,6 +172,16 @@ function readMessageForStatus(status: number, detail: string | null): string {
     return "The server could not load the document catalog. Please try again.";
   }
   return detail ?? "The document catalog could not be loaded. Please try again.";
+}
+
+function deleteMessageForStatus(status: number, detail: string | null): string {
+  if (status === 404) {
+    return "This document no longer exists. The catalog will be updated.";
+  }
+  if (status >= 500) {
+    return "The server could not delete this document. Please try again.";
+  }
+  return detail ?? "The document could not be deleted. Please try again.";
 }
 
 function isDocumentUploadResponse(
