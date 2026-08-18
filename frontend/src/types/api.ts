@@ -6,6 +6,23 @@ export interface DocumentUploadResponse {
   vector_store_name: string;
 }
 
+export interface DocumentSummary {
+  document_id: string;
+  filename: string;
+  chunk_count: number;
+}
+
+export interface DocumentChunk {
+  chunk_id: string;
+  chunk_index: number;
+  text: string;
+  metadata: Record<string, string>;
+}
+
+export interface DocumentDetail extends DocumentSummary {
+  chunks: DocumentChunk[];
+}
+
 export interface FastApiValidationIssue {
   msg?: string;
 }

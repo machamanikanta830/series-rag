@@ -1,7 +1,7 @@
 import { type ChangeEvent, type FormEvent, useRef, useState } from "react";
 
 import { PageIntro } from "../../components/PageIntro";
-import { DocumentUploadError, uploadDocument } from "../../services";
+import { DocumentApiError, uploadDocument } from "../../services";
 import type { DocumentUploadResponse } from "../../types";
 
 const MAX_UPLOAD_BYTES = 1_048_576;
@@ -48,7 +48,7 @@ export function UploadPage() {
       setResult(uploadResult);
     } catch (error) {
       setSubmitError(
-        error instanceof DocumentUploadError
+        error instanceof DocumentApiError
           ? error.message
           : "The document could not be uploaded. Please try again.",
       );

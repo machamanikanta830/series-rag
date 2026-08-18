@@ -76,6 +76,7 @@ class DocumentChunkResponse(BaseModel):
     chunk_id: str
     chunk_index: int
     text: str
+    metadata: dict[str, str]
 
 
 class DocumentDetailResponse(DocumentSummaryResponse):

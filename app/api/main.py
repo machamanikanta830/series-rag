@@ -307,6 +307,7 @@ def _to_document_detail(entry: CatalogDocument) -> DocumentDetailResponse:
                 chunk_id=chunk.chunk_id,
                 chunk_index=chunk.chunk_index,
                 text=chunk.text,
+                metadata=dict(chunk.metadata),
             )
             for chunk in entry.chunks
         ],

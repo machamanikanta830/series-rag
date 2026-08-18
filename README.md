@@ -71,8 +71,9 @@ navigation and placeholder pages at:
 - `/chat`
 - `/documents`
 
-The upload page now calls the SeriesRAG document-ingestion API. Chat and document
-browsing remain placeholders for later milestones.
+The upload page calls the SeriesRAG document-ingestion API, and the Documents
+page reads the in-process catalog. Chat remains a placeholder for a later
+milestone.
 
 Start the FastAPI backend from the repository root:
 
@@ -91,6 +92,11 @@ npm run dev
 Open the local Vite URL, visit `/upload`, choose one supported file under 1 MB,
 and submit it. During local development, Vite proxies `/documents` to FastAPI at
 `http://localhost:8000`, so backend CORS configuration is not required.
+
+After uploading, visit `/documents` to browse the catalog. Select a document to
+inspect its chunks without leaving the page. PDF chunks show their source page;
+DOCX chunks show available section and heading provenance. The empty catalog
+links back to `/upload`, and transient list or detail failures can be retried.
 
 `frontend/.env.example` documents `VITE_API_BASE_URL`. Leave it blank for the
 local proxy workflow. Set it to a separately hosted API base URL only when that
