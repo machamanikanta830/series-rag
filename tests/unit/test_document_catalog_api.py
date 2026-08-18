@@ -183,6 +183,7 @@ def test_document_lookup_serializes_chunks_without_embeddings_or_scores() -> Non
                 "chunk_id": body["chunks"][0]["chunk_id"],
                 "chunk_index": 0,
                 "text": "AWS secures physical cloud infrastructure.",
+                "metadata": {"filename": "lesson.md"},
             }
         ],
     }

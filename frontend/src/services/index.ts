@@ -1,1 +1,6 @@
-export { DocumentUploadError, uploadDocument } from "./documents";
+export {
+  DocumentApiError,
+  getDocument,
+  listDocuments,
+  uploadDocument,
+} from "./documents";

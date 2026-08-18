@@ -103,6 +103,7 @@ def test_uploaded_pdf_chunks_preserve_page_and_filename_metadata() -> None:
     document_id = upload_response.json()["document_id"]
 
     catalog_document = get_document_catalog().get_document(document_id)
+    detail_response = client.get(f"/documents/{document_id}")
 
     assert upload_response.status_code == 201
     assert catalog_document is not None
@@ -113,6 +114,9 @@ def test_uploaded_pdf_chunks_preserve_page_and_filename_metadata() -> None:
     assert all(
         chunk.metadata["filename"] == "pages.pdf" for chunk in catalog_document.chunks
     )
+    assert [
+        chunk["metadata"]["page_number"] for chunk in detail_response.json()["chunks"]
+    ] == ["1", "2"]
 
 
 def test_malformed_pdf_returns_stable_unprocessable_response() -> None:

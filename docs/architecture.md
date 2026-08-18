@@ -48,7 +48,7 @@ domain models. The pipeline is obtained through an overrideable FastAPI
 dependency, allowing API tests to run entirely offline without Sentence
 Transformers, Qdrant, or Ollama.
 
-### React upload adapter
+### React document adapters
 
 The Vite frontend keeps HTTP details in `frontend/src/services` and public API
 shapes in `frontend/src/types`. The upload page validates one selected file for
@@ -57,11 +57,19 @@ construction and response parsing to `uploadDocument`. FastAPI remains the
 authoritative validator; structured HTTP failures become stable, user-facing
 messages rather than raw exception details.
 
+The Documents page uses the same service boundary for `GET /documents` and
+`GET /documents/{document_id}`. It keeps list selection and loading state local,
+preserves catalog order, and renders chunk text without exposing embeddings.
+Document-detail responses include the chunks' existing string metadata so PDF
+page numbers and DOCX section provenance can cross the HTTP boundary. The UI
+handles metadata as an open mapping because not every source type has the same
+provenance fields.
+
 During `npm run dev`, Vite proxies `/documents` to the local FastAPI service on
 port 8000. This keeps the local browser request same-origin and avoids adding
 CORS behavior to the backend. `VITE_API_BASE_URL` can replace the relative base
 for environments that host an API separately and configure its allowed origin.
-No chat or document-catalog API integration exists in this milestone.
+No chat API integration or document deletion UI exists in this milestone.
 
 ### Document ingestion service
 
