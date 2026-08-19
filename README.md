@@ -97,6 +97,8 @@ After uploading, visit `/documents` to browse the catalog. Select a document to
 inspect its chunks without leaving the page. PDF chunks show their source page;
 DOCX chunks show available section and heading provenance. The empty catalog
 links back to `/upload`, and transient list or detail failures can be retried.
+The selected-document panel also provides an explicit, confirmed delete action.
+Successful deletion updates the catalog in place without reloading the browser.
 
 `frontend/.env.example` documents `VITE_API_BASE_URL`. Leave it blank for the
 local proxy workflow. Set it to a separately hosted API base URL only when that
