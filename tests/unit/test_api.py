@@ -22,6 +22,7 @@ def _search_result(
     score: float,
     source_name: str,
     chunk_index: int,
+    metadata: dict[str, str] | None = None,
 ) -> SearchResult:
     """Create a deterministic domain result for API serialization tests."""
     return SearchResult(
@@ -33,7 +34,7 @@ def _search_result(
             chunk_index=chunk_index,
             start_word=0,
             end_word=3,
-            metadata={"topic": "api-test"},
+            metadata=metadata if metadata is not None else {"topic": "api-test"},
         ),
         score=score,
     )
@@ -156,6 +157,7 @@ def test_query_serializes_pipeline_result_and_preserves_source_order() -> None:
                 "chunk_index": 0,
                 "text": "Text for first.",
                 "score": 0.91,
+                "metadata": {"topic": "api-test"},
             },
             {
                 "chunk_id": "second",
@@ -164,9 +166,43 @@ def test_query_serializes_pipeline_result_and_preserves_source_order() -> None:
                 "chunk_index": 2,
                 "text": "Text for second.",
                 "score": 0.73,
+                "metadata": {"topic": "api-test"},
             },
         ],
     }
+
+
+def test_query_exposes_existing_source_provenance_metadata() -> None:
+    """Query citations retain source-specific metadata without exposing vectors."""
+    source = _search_result(
+        "pdf-source",
+        score=0.88,
+        source_name="course.pdf",
+        chunk_index=3,
+        metadata={"filename": "course.pdf", "page_number": "4"},
+    )
+    pipeline = StubPipeline(
+        result=RAGPipelineResult(
+            answer="Grounded answer.",
+            context="Built context.",
+            prompt="Completed prompt.",
+            search_results=(source,),
+            included_chunks=(source.chunk,),
+        )
+    )
+    _override_pipeline(pipeline)
+
+    response = client.post(
+        "/query",
+        json={"question": "Which page supports this?", "top_k": 1},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["sources"][0]["metadata"] == {
+        "filename": "course.pdf",
+        "page_number": "4",
+    }
+    assert "embedding" not in response.text
 
 
 def test_query_requires_a_question_field() -> None:

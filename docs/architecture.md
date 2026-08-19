@@ -79,8 +79,13 @@ FastAPI error-detail extraction for both document and query services. The query
 service validates the complete response shape before returning it to the page.
 The page keeps only the current question, retrieval limit, request state, and
 latest result in local React state. Answers are rendered as plain text, while
-the initial source list exposes only filenames, chunk indexes, and retrieval
-scores; detailed citation inspection and session history remain separate work.
+the supporting-evidence list preserves backend order and exact retrieval scores.
+Each source can be expanded locally to reveal its full chunk text, shortened
+domain IDs, and all returned string provenance. `SourceResponse` includes a
+backward-compatible copy of the chunk metadata, allowing PDF page numbers and
+DOCX section details to reach the inspector without changing retrieval,
+context-building, or generation behavior. Embeddings remain private. Session
+history remains separate work.
 
 During `npm run dev`, Vite proxies `/documents` and `/query` to the local FastAPI
 service on port 8000. This keeps local browser requests same-origin and avoids

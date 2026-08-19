@@ -4,6 +4,7 @@ import type {
   DocumentUploadResponse,
 } from "../types";
 import { ApiError, extractErrorDetail, requestJson } from "./apiClient";
+import { isNonNegativeInteger, isRecord, isStringRecord } from "./validation";
 
 export { ApiError as DocumentApiError } from "./apiClient";
 
@@ -172,21 +173,4 @@ function isDocumentChunk(payload: unknown): payload is DocumentDetail["chunks"][
     typeof payload.text === "string" &&
     isStringRecord(payload.metadata)
   );
-}
-
-function isNonNegativeInteger(value: unknown): value is number {
-  return typeof value === "number" && Number.isInteger(value) && value >= 0;
-}
-
-function isStringRecord(value: unknown): value is Record<string, string> {
-  return (
-    isRecord(value) &&
-    Object.entries(value).every(
-      ([key, entryValue]) => key.length > 0 && typeof entryValue === "string",
-    )
-  );
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }

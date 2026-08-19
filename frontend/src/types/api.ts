@@ -30,6 +30,7 @@ export interface QuerySource {
   chunk_index: number;
   text: string;
   score: number;
+  metadata: Record<string, string>;
 }
 
 export interface QueryResponse {

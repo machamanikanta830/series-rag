@@ -336,6 +336,7 @@ def _to_query_response(result: RAGPipelineResult) -> QueryResponse:
                 chunk_index=chunk.chunk_index,
                 text=chunk.text,
                 score=search_result.score,
+                metadata=dict(chunk.metadata),
             )
         )
         serialized_chunk_ids.add(chunk.chunk_id)

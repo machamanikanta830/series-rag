@@ -1,5 +1,6 @@
 import type { QueryResponse, QuerySource } from "../types";
 import { ApiError, extractErrorDetail, requestJson } from "./apiClient";
+import { isNonNegativeInteger, isRecord, isStringRecord } from "./validation";
 
 export { ApiError as QueryApiError } from "./apiClient";
 
@@ -67,14 +68,10 @@ function isQuerySource(payload: unknown): payload is QuerySource {
     typeof payload.chunk_id === "string" &&
     typeof payload.document_id === "string" &&
     typeof payload.source_name === "string" &&
-    Number.isInteger(payload.chunk_index) &&
-    (payload.chunk_index as number) >= 0 &&
+    isNonNegativeInteger(payload.chunk_index) &&
     typeof payload.text === "string" &&
     typeof payload.score === "number" &&
-    Number.isFinite(payload.score)
+    Number.isFinite(payload.score) &&
+    isStringRecord(payload.metadata)
   );
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }

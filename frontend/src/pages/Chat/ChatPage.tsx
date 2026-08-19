@@ -193,7 +193,11 @@ function AnswerPanel({
       {!isSubmitting && result === null ? <AnswerEmptyState /> : null}
 
       {!isSubmitting && result !== null && submittedQuestion !== null ? (
-        <div role="status" aria-live="polite">
+        <div>
+          <p className="sr-only" role="status" aria-live="polite">
+            Answer ready with {result.sources.length} supporting source
+            {result.sources.length === 1 ? "" : "s"}.
+          </p>
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-700">
             Grounded answer
           </p>
@@ -204,7 +208,7 @@ function AnswerPanel({
             {result.answer}
           </p>
 
-          <BasicSourceList sources={result.sources} />
+          <SourceInspector sources={result.sources} />
         </div>
       ) : null}
     </section>
@@ -222,7 +226,9 @@ function AnswerEmptyState() {
   );
 }
 
-function BasicSourceList({ sources }: { sources: QueryResponse["sources"] }) {
+function SourceInspector({ sources }: { sources: QueryResponse["sources"] }) {
+  const [expandedChunkId, setExpandedChunkId] = useState<string | null>(null);
+
   return (
     <section
       className="mt-10 border-t border-slate-200 pt-6"
@@ -230,7 +236,7 @@ function BasicSourceList({ sources }: { sources: QueryResponse["sources"] }) {
     >
       <div className="flex items-baseline justify-between gap-4">
         <h2 id="sources-title" className="text-sm font-semibold text-slate-950">
-          Retrieved sources
+          Supporting sources
         </h2>
         <span className="text-xs text-slate-500">
           {sources.length} {sources.length === 1 ? "source" : "sources"}
@@ -242,25 +248,136 @@ function BasicSourceList({ sources }: { sources: QueryResponse["sources"] }) {
       ) : (
         <ol className="mt-4 space-y-3">
           {sources.map((source, index) => (
-            <li
-              key={`${source.chunk_id}-${index}`}
-              className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="break-words text-sm font-semibold text-slate-900">
-                  {source.source_name}
-                </p>
-                <p className="font-mono text-xs text-slate-500">
-                  Score {source.score.toFixed(4)}
-                </p>
-              </div>
-              <p className="mt-2 text-xs text-slate-500">
-                Chunk {source.chunk_index}
-              </p>
-            </li>
+            <SourceEvidence
+              key={source.chunk_id}
+              source={source}
+              index={index}
+              expanded={expandedChunkId === source.chunk_id}
+              onToggle={() =>
+                setExpandedChunkId((currentId) =>
+                  currentId === source.chunk_id ? null : source.chunk_id,
+                )
+              }
+            />
           ))}
         </ol>
       )}
     </section>
   );
+}
+
+interface SourceEvidenceProps {
+  source: QueryResponse["sources"][number];
+  index: number;
+  expanded: boolean;
+  onToggle: () => void;
+}
+
+function SourceEvidence({
+  source,
+  index,
+  expanded,
+  onToggle,
+}: SourceEvidenceProps) {
+  const panelId = `source-evidence-${index}`;
+  const metadata = Object.entries(source.metadata);
+
+  return (
+    <li className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+      <button
+        type="button"
+        aria-expanded={expanded}
+        aria-controls={panelId}
+        onClick={onToggle}
+        className="w-full px-4 py-3 text-left hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand-600 sm:px-5"
+      >
+        <span className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <span className="min-w-0">
+            <span className="block break-words text-sm font-semibold text-slate-900">
+              {source.source_name}
+            </span>
+            <span className="mt-1 block text-xs text-slate-500">
+              Chunk {source.chunk_index}
+            </span>
+          </span>
+          <span className="flex shrink-0 items-center justify-between gap-4 sm:justify-end">
+            <span className="font-mono text-xs text-slate-500">
+              Score {String(source.score)}
+            </span>
+            <span className="text-xs font-semibold text-brand-700">
+              {expanded ? "Hide evidence" : "Inspect evidence"}
+            </span>
+          </span>
+        </span>
+      </button>
+
+      {expanded ? (
+        <div
+          id={panelId}
+          className="border-t border-slate-200 bg-white px-4 py-5 sm:px-5 sm:py-6"
+        >
+          <dl className="grid gap-4 text-xs sm:grid-cols-2">
+            <div>
+              <dt className="font-bold uppercase tracking-[0.12em] text-slate-400">
+                Document ID
+              </dt>
+              <dd className="mt-1 font-mono text-slate-700" title={source.document_id}>
+                {shortenId(source.document_id)}
+              </dd>
+            </div>
+            <div>
+              <dt className="font-bold uppercase tracking-[0.12em] text-slate-400">
+                Chunk ID
+              </dt>
+              <dd className="mt-1 font-mono text-slate-700" title={source.chunk_id}>
+                {shortenId(source.chunk_id)}
+              </dd>
+            </div>
+          </dl>
+
+          {metadata.length > 0 ? (
+            <dl
+              className="mt-5 flex flex-wrap gap-2"
+              aria-label="Source provenance"
+            >
+              {metadata.map(([key, value]) => (
+                <div
+                  key={key}
+                  className="inline-flex max-w-full rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs"
+                >
+                  <dt className="shrink-0 font-semibold text-slate-600">
+                    {metadataLabel(key)}:
+                  </dt>
+                  <dd className="ml-1 break-words text-slate-800">{value}</dd>
+                </div>
+              ))}
+            </dl>
+          ) : null}
+
+          <div className="mt-6">
+            <h3 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">
+              Full chunk text
+            </h3>
+            <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-7 text-slate-800">
+              {source.text}
+            </p>
+          </div>
+        </div>
+      ) : null}
+    </li>
+  );
+}
+
+function shortenId(value: string): string {
+  return value.length <= 20 ? value : `${value.slice(0, 11)}…${value.slice(-6)}`;
+}
+
+function metadataLabel(key: string): string {
+  const knownLabels: Record<string, string> = {
+    filename: "Filename",
+    page_number: "Page",
+    section_type: "Section",
+    heading_style: "Heading style",
+  };
+  return knownLabels[key] ?? key.replaceAll("_", " ");
 }
