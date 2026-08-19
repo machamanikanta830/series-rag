@@ -5,4 +5,6 @@ export type {
   DocumentUploadResponse,
   FastApiErrorResponse,
   FastApiValidationIssue,
+  QueryResponse,
+  QuerySource,
 } from "./api";

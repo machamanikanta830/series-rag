@@ -73,11 +73,20 @@ detail selection. A 404 also removes the stale local entry because the backend
 has already reached the desired state; server and network failures leave the
 document visible so the user can retry safely.
 
-During `npm run dev`, Vite proxies `/documents` to the local FastAPI service on
-port 8000. This keeps the local browser request same-origin and avoids adding
-CORS behavior to the backend. `VITE_API_BASE_URL` can replace the relative base
-for environments that host an API separately and configure its allowed origin.
-No chat API integration exists in this milestone.
+The Chat page delegates `POST /query` to a typed query service. A shared HTTP
+client now owns the Vite API base URL, JSON parsing, network-error mapping, and
+FastAPI error-detail extraction for both document and query services. The query
+service validates the complete response shape before returning it to the page.
+The page keeps only the current question, retrieval limit, request state, and
+latest result in local React state. Answers are rendered as plain text, while
+the initial source list exposes only filenames, chunk indexes, and retrieval
+scores; detailed citation inspection and session history remain separate work.
+
+During `npm run dev`, Vite proxies `/documents` and `/query` to the local FastAPI
+service on port 8000. This keeps local browser requests same-origin and avoids
+adding CORS behavior to the backend. `VITE_API_BASE_URL` can replace the relative
+base for environments that host an API separately and configure its allowed
+origin.
 
 ### Document ingestion service
 

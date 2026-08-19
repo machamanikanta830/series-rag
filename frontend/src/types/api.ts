@@ -23,6 +23,22 @@ export interface DocumentDetail extends DocumentSummary {
   chunks: DocumentChunk[];
 }
 
+export interface QuerySource {
+  chunk_id: string;
+  document_id: string;
+  source_name: string;
+  chunk_index: number;
+  text: string;
+  score: number;
+}
+
+export interface QueryResponse {
+  answer: string;
+  context: string;
+  prompt: string;
+  sources: QuerySource[];
+}
+
 export interface FastApiValidationIssue {
   msg?: string;
 }

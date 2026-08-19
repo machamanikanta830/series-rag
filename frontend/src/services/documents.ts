@@ -2,21 +2,10 @@ import type {
   DocumentDetail,
   DocumentSummary,
   DocumentUploadResponse,
-  FastApiErrorResponse,
 } from "../types";
+import { ApiError, extractErrorDetail, requestJson } from "./apiClient";
 
-const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
-const apiBaseUrl = configuredApiBaseUrl?.replace(/\/+$/, "") ?? "";
-
-export class DocumentApiError extends Error {
-  readonly status: number | null;
-
-  constructor(message: string, status: number | null = null) {
-    super(message);
-    this.name = "DocumentApiError";
-    this.status = status;
-  }
-}
+export { ApiError as DocumentApiError } from "./apiClient";
 
 export async function uploadDocument(
   file: File,
@@ -29,14 +18,14 @@ export async function uploadDocument(
     body: formData,
   });
   if (!response.ok) {
-    throw new DocumentApiError(
+    throw new ApiError(
       uploadMessageForStatus(response.status, extractErrorDetail(payload)),
       response.status,
     );
   }
 
   if (!isDocumentUploadResponse(payload)) {
-    throw new DocumentApiError(
+    throw new ApiError(
       "The API returned an unexpected upload response. Please try again.",
       response.status,
     );
@@ -47,13 +36,13 @@ export async function uploadDocument(
 export async function listDocuments(): Promise<DocumentSummary[]> {
   const { response, payload } = await requestJson("/documents");
   if (!response.ok) {
-    throw new DocumentApiError(
+    throw new ApiError(
       readMessageForStatus(response.status, extractErrorDetail(payload)),
       response.status,
     );
   }
   if (!Array.isArray(payload) || !payload.every(isDocumentSummary)) {
-    throw new DocumentApiError(
+    throw new ApiError(
       "The API returned an unexpected document list. Please try again.",
       response.status,
     );
@@ -68,13 +57,13 @@ export async function getDocument(
     `/documents/${encodeURIComponent(documentId)}`,
   );
   if (!response.ok) {
-    throw new DocumentApiError(
+    throw new ApiError(
       readMessageForStatus(response.status, extractErrorDetail(payload)),
       response.status,
     );
   }
   if (!isDocumentDetail(payload)) {
-    throw new DocumentApiError(
+    throw new ApiError(
       "The API returned unexpected document details. Please try again.",
       response.status,
     );
@@ -91,61 +80,15 @@ export async function deleteDocument(documentId: string): Promise<void> {
     return;
   }
   if (!response.ok) {
-    throw new DocumentApiError(
+    throw new ApiError(
       deleteMessageForStatus(response.status, extractErrorDetail(payload)),
       response.status,
     );
   }
-  throw new DocumentApiError(
+  throw new ApiError(
     "The API returned an unexpected deletion response. Please try again.",
     response.status,
   );
-}
-
-interface JsonResponse {
-  response: Response;
-  payload: unknown;
-}
-
-async function requestJson(path: string, init?: RequestInit): Promise<JsonResponse> {
-  let response: Response;
-  try {
-    response = await fetch(`${apiBaseUrl}${path}`, init);
-  } catch {
-    throw new DocumentApiError(
-      "The SeriesRAG API is unreachable. Confirm the backend is running and try again.",
-    );
-  }
-  return {
-    response,
-    payload: response.status === 204 ? null : await readJson(response),
-  };
-}
-
-async function readJson(response: Response): Promise<unknown> {
-  try {
-    return await response.json();
-  } catch {
-    return null;
-  }
-}
-
-function extractErrorDetail(payload: unknown): string | null {
-  if (!isRecord(payload)) {
-    return null;
-  }
-
-  const { detail } = payload as FastApiErrorResponse;
-  if (typeof detail === "string" && detail.trim()) {
-    return detail;
-  }
-  if (Array.isArray(detail)) {
-    const messages = detail
-      .map((issue) => issue.msg)
-      .filter((message): message is string => Boolean(message?.trim()));
-    return messages.length > 0 ? messages.join(" ") : null;
-  }
-  return null;
 }
 
 function uploadMessageForStatus(status: number, detail: string | null): string {
