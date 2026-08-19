@@ -77,15 +77,23 @@ The Chat page delegates `POST /query` to a typed query service. A shared HTTP
 client now owns the Vite API base URL, JSON parsing, network-error mapping, and
 FastAPI error-detail extraction for both document and query services. The query
 service validates the complete response shape before returning it to the page.
-The page keeps only the current question, retrieval limit, request state, and
-latest result in local React state. Answers are rendered as plain text, while
-the supporting-evidence list preserves backend order and exact retrieval scores.
+The page keeps the current question, retrieval limit, request state, and an
+ordered `ConversationItem` list in local React state. Each completed item has a
+client-generated identity, submitted question, plain-text answer, and its own
+supporting sources. Successful requests append without replacing earlier
+answers; failed requests leave the completed history unchanged. The
+supporting-evidence list preserves backend order and exact retrieval scores.
 Each source can be expanded locally to reveal its full chunk text, shortened
 domain IDs, and all returned string provenance. `SourceResponse` includes a
 backward-compatible copy of the chunk metadata, allowing PDF page numbers and
 DOCX section details to reach the inspector without changing retrieval,
-context-building, or generation behavior. Embeddings remain private. Session
-history remains separate work.
+context-building, or generation behavior. Each conversation card owns its source
+expansion and Clipboard API feedback state, so interactions remain isolated.
+
+Conversation history is intentionally ephemeral: it is not sent to a
+conversation API, written to local storage, or persisted by the backend. The
+confirmed clear action empties only the frontend list and never deletes uploaded
+documents. Embeddings remain private.
 
 During `npm run dev`, Vite proxies `/documents` and `/query` to the local FastAPI
 service on port 8000. This keeps local browser requests same-origin and avoids

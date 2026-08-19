@@ -102,10 +102,11 @@ The selected-document panel also provides an explicit, confirmed delete action.
 Successful deletion updates the catalog in place without reloading the browser.
 
 Visit `/chat` to submit a question and choose how many source chunks should be
-retrieved. The page displays the grounded answer as plain text and lists each
-returned source filename, chunk index, and retrieval score. Supporting sources
-can be expanded to inspect chunk text and available provenance. Session history
-is intentionally deferred.
+retrieved. Successful questions and grounded answers are appended in order for
+the current browser session. Each answer can be copied, and its supporting
+sources can be expanded to inspect chunk text and available provenance. Clearing
+the conversation removes only this in-memory history; uploaded documents remain
+unchanged. Refreshing the browser may reset the conversation.
 
 `frontend/.env.example` documents `VITE_API_BASE_URL`. Leave it blank for the
 local proxy workflow. Set it to a separately hosted API base URL only when that

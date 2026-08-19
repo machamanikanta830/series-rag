@@ -8,3 +8,4 @@ export type {
   QueryResponse,
   QuerySource,
 } from "./api";
+export type { ConversationItem } from "./chat";
