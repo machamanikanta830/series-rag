@@ -97,6 +97,49 @@ mode the model has already reported its dimension during runtime construction;
 with in-memory storage, a later embedding operation remains the first model-load
 boundary. This trade-off is documented rather than hidden behind an unsafe probe.
 
+### Container runtime
+
+The root Compose project connects three services on its private default network:
+
+```text
+browser
+  → 127.0.0.1:3000
+  → Nginx frontend
+      ├─ static React files and SPA fallback
+      └─ /api/* → backend:8000
+                       ↓
+                 FastAPI runtime
+                       ↓
+                 qdrant:6333
+                       ↓
+              qdrant_storage volume
+```
+
+The backend image is built from a Python 3.12 slim base, installs only project
+runtime dependencies and the `app` package, and runs Uvicorn without reload as
+an unprivileged user. Its image-level health check uses `/health` for cheap
+liveness. Compose replaces that check with `/ready`, so the frontend waits until
+the configured Qdrant-backed runtime can serve application work. Backend startup
+itself waits for Qdrant's read-only `/readyz` check. Qdrant's REST port is bound
+to localhost for inspection; its gRPC port stays internal and unpublished.
+
+The frontend image has a Node build stage that uses `npm ci` and a separate Nginx
+unprivileged runtime stage containing only compiled assets and server
+configuration. The production build sets `VITE_API_BASE_URL=/api`. Nginx strips
+that prefix when proxying to FastAPI, keeping Docker service names out of
+browser-visible URLs and avoiding cross-origin configuration. All other unknown
+paths fall back to `index.html`, allowing React Router routes to survive direct
+navigation and refresh. The Vite development proxy remains unchanged. Compose
+also uses Qdrant's version-matched unprivileged image.
+
+Compose defaults to Sentence Transformer embeddings, Qdrant storage, and fake
+generation. Ollama remains an external, explicit option reached through
+`host.docker.internal` or an overridden URL. No container startup or image build
+pulls an Ollama model. Qdrant vectors and the embedding-model cache use named
+volumes. `InMemoryDocumentCatalog` is not durable: a backend restart can leave
+persistent Qdrant points without corresponding catalog entries. A persistent
+catalog and cross-store reconciliation remain future requirements.
+
 ### FastAPI adapter
 
 `app.api.main` exposes metadata at `/`, a process-level `/health` response,

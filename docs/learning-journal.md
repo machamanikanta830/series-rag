@@ -298,3 +298,23 @@ questions, not to produce formal documentation.
   dependency checks under frequent orchestration probes?
 - How should container startup ordering use liveness and readiness without
   introducing application-level retries?
+
+## Milestone 16C
+
+### Learned
+
+- A multi-stage frontend image separates build tools from the small static-file
+  runtime shipped to users.
+- A same-origin `/api` reverse proxy keeps internal Compose service names out of
+  browser URLs while SPA fallback preserves React Router refreshes.
+- Compose dependency health can order Qdrant, backend, and frontend startup
+  without adding retry logic to application components.
+- Persisting vectors without persisting the document catalog creates an explicit
+  lifecycle consistency limitation across backend restarts.
+
+### Questions
+
+- Which durable catalog should eventually coordinate document metadata with
+  persistent Qdrant points?
+- When would immutable image digests or a Python dependency lock become necessary
+  for stricter deployment reproducibility?

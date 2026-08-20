@@ -60,6 +60,72 @@ may resolve to a global Conda installation:
 .venv/bin/pytest
 ```
 
+## Docker quick start
+
+Prerequisites are Docker Desktop, or Docker Engine with the Compose plugin. Start
+the frontend, backend, and Qdrant from the repository root with one command:
+
+```bash
+docker compose up --build -d
+docker compose ps
+```
+
+The first backend build and startup can take several minutes while Python runtime
+packages and `sentence-transformers/all-MiniLM-L6-v2` are downloaded. The model
+cache is stored in a named volume for later container recreation. The default
+stack does not run Ollama or download an Ollama model.
+
+Local endpoints are bound to localhost:
+
+- Frontend: `http://localhost:3000`
+- Backend API and OpenAPI UI: `http://localhost:8000` and
+  `http://localhost:8000/docs`
+- Qdrant REST API: `http://localhost:6333`
+
+The production frontend sends same-origin requests through `/api`; Nginx removes
+that prefix and proxies them to the internal `backend:8000` service. For example:
+
+```bash
+curl http://localhost:8000/health
+curl -i http://localhost:8000/ready
+curl http://localhost:3000/api/health
+```
+
+Direct browser refreshes of `/upload`, `/chat`, and `/documents` return the React
+application through Nginx's SPA fallback. Local `npm run dev` continues using
+Vite's existing proxy and does not use the production `/api` prefix.
+
+Stop containers without deleting stored data:
+
+```bash
+docker compose down
+```
+
+The `qdrant_storage` volume preserves vectors and the `huggingface_cache` volume
+preserves downloaded embedding-model files. To deliberately remove both volumes,
+use `docker compose down --volumes`.
+
+The document catalog is still held only in backend process memory. Restarting the
+backend therefore empties `GET /documents` even though Qdrant vectors survive.
+This milestone does not claim consistent, durable document management across
+backend restarts.
+
+To use an Ollama service running on the Docker host, pull the model explicitly
+before starting the stack, then select it through environment variables:
+
+```bash
+ollama pull llama3.2
+
+SERIESRAG_GENERATION_PROVIDER=ollama \
+SERIESRAG_OLLAMA_MODEL=llama3.2 \
+docker compose up --build -d
+```
+
+Compose defaults `SERIESRAG_OLLAMA_URL` to
+`http://host.docker.internal:11434`. Override it when Ollama is reachable at a
+different URL. The application never pulls a model automatically; an unavailable
+service or missing configured model makes `/ready` return HTTP 503.
+
 ## Runtime configuration
 
 The FastAPI process builds one shared runtime dependency graph from environment
