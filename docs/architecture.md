@@ -69,9 +69,33 @@ Unsupported or incomplete selections fail during configuration instead of
 falling back silently.
 
 Qdrant and Ollama clients are configured without readiness probes in this
-milestone; service health belongs to the next runtime milestone. The document
-catalog is still process-local even when Qdrant stores vectors remotely, so this
-configuration does not yet provide durable document-management metadata.
+runtime graph. The document catalog is still process-local even when Qdrant
+stores vectors remotely, so this configuration does not yet provide durable
+document-management metadata.
+
+### Liveness and readiness
+
+`GET /health` is a liveness signal: it proves the FastAPI process can answer a
+request and deliberately does not resolve runtime dependencies or make network
+calls. `GET /ready` is a readiness signal: a small evaluator inspects the shared
+`RuntimeState` and reports the embedding, vector-store, and generation providers
+individually. All required components produce HTTP 200; any unavailable required
+component produces HTTP 503 with the same structured, public-safe body.
+
+The in-memory vector store, deterministic development embeddings, and fake
+generation have no external dependency, so validated configuration is sufficient
+for them. Qdrant readiness delegates to its existing read-only collection-list
+check and performs no writes. Ollama readiness calls `GET /api/tags` and requires
+the configured model to be present; it neither generates text nor pulls a model.
+Unexpected provider exceptions are contained at this boundary and appear only as
+`ready: false`, without URLs, stack traces, or exception details in the response.
+
+Sentence Transformer readiness is intentionally configuration-based. Calling
+the readiness endpoint never asks the lazy provider to load a model, preventing
+an operational probe from unexpectedly downloading a large artifact. In Qdrant
+mode the model has already reported its dimension during runtime construction;
+with in-memory storage, a later embedding operation remains the first model-load
+boundary. This trade-off is documented rather than hidden behind an unsafe probe.
 
 ### FastAPI adapter
 

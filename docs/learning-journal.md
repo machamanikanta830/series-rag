@@ -278,3 +278,23 @@ questions, not to produce formal documentation.
   readiness?
 - How should durable document-catalog metadata be coordinated with Qdrant in a
   later deployment milestone?
+
+## Milestone 16B
+
+### Learned
+
+- Liveness should answer whether the process is responsive without depending on
+  model files, databases, or generation services.
+- Readiness can expose component-level state and return HTTP 503 without leaking
+  the underlying provider exception.
+- A read-only Ollama model-list request can verify both service reachability and
+  model availability without generating text or pulling artifacts.
+- Model readiness probes must account for lazy loading so an operational check
+  does not unexpectedly trigger a download.
+
+### Questions
+
+- Should later deployments cache readiness results briefly to avoid excessive
+  dependency checks under frequent orchestration probes?
+- How should container startup ordering use liveness and readiness without
+  introducing application-level retries?

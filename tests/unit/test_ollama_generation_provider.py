@@ -65,6 +65,48 @@ def test_provider_preserves_prompt_text_and_generated_text() -> None:
     assert generated_text == "  Generated text.  "
 
 
+def test_readiness_lists_models_without_generating_or_pulling() -> None:
+    """The read-only tags endpoint confirms the configured model is available."""
+    provider = OllamaGenerationProvider(
+        model="test-model",
+        base_url="http://ollama.test:11434",
+        timeout_seconds=4.0,
+    )
+    response = FakeHttpResponse(
+        b'{"models": [{"name": "test-model:latest", "model": "test-model"}]}'
+    )
+
+    with patch("app.generation.ollama.urlopen", return_value=response) as open_url:
+        is_ready = provider.is_ready()
+
+    request = open_url.call_args.args[0]
+    assert request.full_url == "http://ollama.test:11434/api/tags"
+    assert request.get_method() == "GET"
+    assert request.data is None
+    assert open_url.call_args.kwargs == {"timeout": 4.0}
+    assert is_ready is True
+
+
+def test_readiness_is_false_when_configured_model_is_missing() -> None:
+    """A reachable Ollama service is insufficient without the selected model."""
+    provider = OllamaGenerationProvider("expected-model")
+    response = FakeHttpResponse(b'{"models": [{"name": "another-model:latest"}]}')
+
+    with patch("app.generation.ollama.urlopen", return_value=response):
+        assert provider.is_ready() is False
+
+
+def test_readiness_is_false_when_ollama_is_unavailable() -> None:
+    """Connection failures become a boolean state rather than generation errors."""
+    provider = OllamaGenerationProvider("test-model")
+
+    with patch(
+        "app.generation.ollama.urlopen",
+        side_effect=URLError("connection refused"),
+    ):
+        assert provider.is_ready() is False
+
+
 @pytest.mark.parametrize("model", ["", "   "])
 def test_provider_rejects_empty_model_names(model: str) -> None:
     """A local generation request needs a named Ollama model."""

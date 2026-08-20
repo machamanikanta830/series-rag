@@ -94,6 +94,27 @@ missing settings for a selected provider stop configuration with a clear error;
 the application never silently substitutes fake generation or in-memory storage.
 The document catalog remains in memory in every mode at this stage.
 
+The API separates process liveness from dependency readiness:
+
+```bash
+curl http://localhost:8000/health
+curl -i http://localhost:8000/ready
+```
+
+`GET /health` always performs a cheap process-level check and never contacts a
+model or external service. `GET /ready` reports the configured embedding, vector
+store, and generation providers. It returns HTTP 200 when all required components
+are ready and HTTP 503 when Qdrant, Ollama, or Ollama's configured model is
+unavailable. Qdrant readiness is read-only, and Ollama readiness calls its
+read-only model-list endpoint; neither check writes vectors, generates text, or
+pulls models.
+
+Sentence Transformer readiness deliberately means that its configuration was
+accepted when the shared runtime was built. The readiness request does not load
+or download a model. In Qdrant mode, runtime construction already obtains the
+model's embedding dimension; with an in-memory store, actual model loading
+remains lazy until embedding work begins.
+
 ## Frontend foundation
 
 The `frontend/` directory contains a responsive React and TypeScript application

@@ -1,5 +1,7 @@
 """Pydantic models for the public SeriesRAG HTTP API."""
 
+from typing import Literal
+
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -12,9 +14,31 @@ class ApiMetadataResponse(BaseModel):
 
 
 class HealthResponse(BaseModel):
-    """Simple health status returned without checking dependencies."""
+    """Simple liveness status returned without checking dependencies."""
 
     status: str
+
+
+class ReadinessComponentResponse(BaseModel):
+    """Public readiness state for one configured runtime dependency."""
+
+    provider: str
+    ready: bool
+
+
+class ReadinessComponentsResponse(BaseModel):
+    """Configured dependency states returned by the readiness endpoint."""
+
+    embedding: ReadinessComponentResponse
+    vector_store: ReadinessComponentResponse
+    generation: ReadinessComponentResponse
+
+
+class ReadinessResponse(BaseModel):
+    """Overall application readiness and its component-level evidence."""
+
+    status: Literal["ready", "not_ready"]
+    components: ReadinessComponentsResponse
 
 
 class QueryRequest(BaseModel):
