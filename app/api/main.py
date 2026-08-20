@@ -11,6 +11,7 @@ from app.api.dependencies import (
     get_document_deletion_service,
     get_ingestion_service,
     get_rag_pipeline,
+    get_runtime_state,
 )
 from app.api.models import (
     ApiMetadataResponse,
@@ -21,6 +22,9 @@ from app.api.models import (
     HealthResponse,
     QueryRequest,
     QueryResponse,
+    ReadinessComponentResponse,
+    ReadinessComponentsResponse,
+    ReadinessResponse,
     SourceResponse,
 )
 from app.document_catalog import CatalogDocument, DocumentCatalog
@@ -38,6 +42,8 @@ from app.parsers.pdf import (
     parse_pdf,
 )
 from app.pipeline.rag_pipeline import RAGPipeline, RAGPipelineResult
+from app.readiness import check_runtime_readiness
+from app.runtime import RuntimeState
 from app.services.deletion import DocumentDeletionService
 from app.services.ingestion import IngestionService
 
@@ -66,8 +72,46 @@ def read_root() -> ApiMetadataResponse:
 
 @app.get("/health", response_model=HealthResponse)
 def read_health() -> HealthResponse:
-    """Return a process-level health response with no dependency checks yet."""
+    """Return a cheap process-level liveness response with no dependency checks."""
     return HealthResponse(status="ok")
+
+
+@app.get(
+    "/ready",
+    response_model=ReadinessResponse,
+    responses={
+        status.HTTP_503_SERVICE_UNAVAILABLE: {
+            "model": ReadinessResponse,
+            "description": "One or more configured dependencies are unavailable.",
+        }
+    },
+)
+def read_ready(
+    response: Response,
+    runtime: Annotated[RuntimeState, Depends(get_runtime_state)],
+) -> ReadinessResponse:
+    """Report whether configured dependencies can serve application work."""
+    readiness = check_runtime_readiness(runtime)
+    if readiness.status == "not_ready":
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+
+    return ReadinessResponse(
+        status=readiness.status,
+        components=ReadinessComponentsResponse(
+            embedding=ReadinessComponentResponse(
+                provider=readiness.components.embedding.provider,
+                ready=readiness.components.embedding.ready,
+            ),
+            vector_store=ReadinessComponentResponse(
+                provider=readiness.components.vector_store.provider,
+                ready=readiness.components.vector_store.ready,
+            ),
+            generation=ReadinessComponentResponse(
+                provider=readiness.components.generation.provider,
+                ready=readiness.components.generation.ready,
+            ),
+        ),
+    )
 
 
 @app.post(

@@ -39,14 +39,115 @@ The architecture stays simple because the goal is to understand the mechanics of
 retrieval. Data models and small functions make intermediate results easy to
 print, assert in tests, and reason about while debugging.
 
+### Runtime configuration and dependency graph
+
+`RuntimeSettings` reads and validates the process environment once, and
+`build_runtime_state` constructs one explicit component graph:
+
+```text
+RuntimeSettings
+  ├─ EmbeddingProvider
+  ├─ VectorStore ───────────────┐
+  ├─ InMemoryDocumentCatalog ───┼─ IngestionService
+  │                             └─ DocumentDeletionService
+  ├─ EmbeddingProvider + VectorStore → SemanticRetriever
+  ├─ ContextBuilder
+  ├─ PromptBuilder
+  └─ GenerationProvider
+       ↓
+     RAGPipeline
+```
+
+FastAPI's dependency functions return components from one shared `RuntimeState`,
+so uploads, queries, catalog reads, and deletions operate on the same objects.
+They remain overrideable for offline HTTP tests. The default graph uses a small
+deterministic embedding provider, `InMemoryVectorStore`, an in-memory catalog,
+and `FakeGenerationProvider`. Explicit production-style settings replace the
+embedding provider with Sentence Transformers, the vector store with
+`QdrantVectorStore`, and generation with `OllamaGenerationProvider` as selected.
+Unsupported or incomplete selections fail during configuration instead of
+falling back silently.
+
+Qdrant and Ollama clients are configured without readiness probes in this
+runtime graph. The document catalog is still process-local even when Qdrant
+stores vectors remotely, so this configuration does not yet provide durable
+document-management metadata.
+
+### Liveness and readiness
+
+`GET /health` is a liveness signal: it proves the FastAPI process can answer a
+request and deliberately does not resolve runtime dependencies or make network
+calls. `GET /ready` is a readiness signal: a small evaluator inspects the shared
+`RuntimeState` and reports the embedding, vector-store, and generation providers
+individually. All required components produce HTTP 200; any unavailable required
+component produces HTTP 503 with the same structured, public-safe body.
+
+The in-memory vector store, deterministic development embeddings, and fake
+generation have no external dependency, so validated configuration is sufficient
+for them. Qdrant readiness delegates to its existing read-only collection-list
+check and performs no writes. Ollama readiness calls `GET /api/tags` and requires
+the configured model to be present; it neither generates text nor pulls a model.
+Unexpected provider exceptions are contained at this boundary and appear only as
+`ready: false`, without URLs, stack traces, or exception details in the response.
+
+Sentence Transformer readiness is intentionally configuration-based. Calling
+the readiness endpoint never asks the lazy provider to load a model, preventing
+an operational probe from unexpectedly downloading a large artifact. In Qdrant
+mode the model has already reported its dimension during runtime construction;
+with in-memory storage, a later embedding operation remains the first model-load
+boundary. This trade-off is documented rather than hidden behind an unsafe probe.
+
+### Container runtime
+
+The root Compose project connects three services on its private default network:
+
+```text
+browser
+  → 127.0.0.1:3000
+  → Nginx frontend
+      ├─ static React files and SPA fallback
+      └─ /api/* → backend:8000
+                       ↓
+                 FastAPI runtime
+                       ↓
+                 qdrant:6333
+                       ↓
+              qdrant_storage volume
+```
+
+The backend image is built from a Python 3.12 slim base, installs only project
+runtime dependencies and the `app` package, and runs Uvicorn without reload as
+an unprivileged user. Its image-level health check uses `/health` for cheap
+liveness. Compose replaces that check with `/ready`, so the frontend waits until
+the configured Qdrant-backed runtime can serve application work. Backend startup
+itself waits for Qdrant's read-only `/readyz` check. Qdrant's REST port is bound
+to localhost for inspection; its gRPC port stays internal and unpublished.
+
+The frontend image has a Node build stage that uses `npm ci` and a separate Nginx
+unprivileged runtime stage containing only compiled assets and server
+configuration. The production build sets `VITE_API_BASE_URL=/api`. Nginx strips
+that prefix when proxying to FastAPI, keeping Docker service names out of
+browser-visible URLs and avoiding cross-origin configuration. All other unknown
+paths fall back to `index.html`, allowing React Router routes to survive direct
+navigation and refresh. The Vite development proxy remains unchanged. Compose
+also uses Qdrant's version-matched unprivileged image.
+
+Compose defaults to Sentence Transformer embeddings, Qdrant storage, and fake
+generation. Ollama remains an external, explicit option reached through
+`host.docker.internal` or an overridden URL. No container startup or image build
+pulls an Ollama model. Qdrant vectors and the embedding-model cache use named
+volumes. `InMemoryDocumentCatalog` is not durable: a backend restart can leave
+persistent Qdrant points without corresponding catalog entries. A persistent
+catalog and cross-store reconciliation remain future requirements.
+
 ### FastAPI adapter
 
 `app.api.main` exposes metadata at `/`, a process-level `/health` response,
 OpenAPI documentation, and a working `/query` adapter around `RAGPipeline`.
 Pydantic request and response models remain separate from internal immutable
 domain models. The pipeline is obtained through an overrideable FastAPI
-dependency, allowing API tests to run entirely offline without Sentence
-Transformers, Qdrant, or Ollama.
+dependency backed by shared runtime state, allowing API tests to run entirely
+offline without Sentence Transformers, Qdrant, or Ollama.
 
 ### React document adapters
 

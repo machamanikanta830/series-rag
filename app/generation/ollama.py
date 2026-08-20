@@ -8,6 +8,7 @@ from urllib.request import Request, urlopen
 from app.generation.base import GenerationProvider
 
 _GENERATE_PATH = "/api/generate"
+_TAGS_PATH = "/api/tags"
 
 
 class OllamaGenerationError(RuntimeError):
@@ -27,6 +28,20 @@ class OllamaGenerationProvider(GenerationProvider):
         self._model = _validate_non_empty_string(model, "model")
         self._base_url = _validate_non_empty_string(base_url, "base_url").rstrip("/")
         self._timeout_seconds = _validate_timeout(timeout_seconds)
+
+    def is_ready(self) -> bool:
+        """Return whether Ollama can list the configured model without generating."""
+        request = Request(
+            url=f"{self._base_url}{_TAGS_PATH}",
+            method="GET",
+        )
+        try:
+            with urlopen(request, timeout=self._timeout_seconds) as response:
+                response_body = response.read()
+        except (HTTPError, TimeoutError, URLError):
+            return False
+
+        return _ollama_response_has_model(response_body, self._model)
 
     def _generate(self, prompt: str) -> str:
         """Request one non-streaming Ollama completion for a validated prompt."""
@@ -108,3 +123,26 @@ def _parse_response(response_body: bytes) -> str:
         raise OllamaGenerationError("Ollama returned an empty generated response.")
 
     return generated_text
+
+
+def _ollama_response_has_model(response_body: bytes, model: str) -> bool:
+    """Check the read-only tags response for the configured model name."""
+    try:
+        response_data = json.loads(response_body)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return False
+
+    if not isinstance(response_data, dict):
+        return False
+    models = response_data.get("models")
+    if not isinstance(models, list):
+        return False
+
+    accepted_names = {model, f"{model}:latest"}
+    for model_data in models:
+        if not isinstance(model_data, dict):
+            continue
+        reported_names = (model_data.get("name"), model_data.get("model"))
+        if any(name in accepted_names for name in reported_names):
+            return True
+    return False

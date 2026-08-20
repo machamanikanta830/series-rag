@@ -260,3 +260,61 @@ questions, not to produce formal documentation.
   retrieval, or remain independent traceable sections?
 - Which DOCX structures would justify expanding extraction beyond body
   paragraphs and tables?
+
+## Milestone 16A
+
+### Learned
+
+- Validated environment settings can select concrete providers while leaving
+  application endpoints dependent only on existing abstractions.
+- One shared runtime graph keeps ingestion, retrieval, catalog, deletion, and
+  generation components aligned on the same process-owned state.
+- Explicit provider validation prevents a requested production service from
+  silently falling back to a development fake.
+
+### Questions
+
+- Which checks should distinguish process health from external-service
+  readiness?
+- How should durable document-catalog metadata be coordinated with Qdrant in a
+  later deployment milestone?
+
+## Milestone 16B
+
+### Learned
+
+- Liveness should answer whether the process is responsive without depending on
+  model files, databases, or generation services.
+- Readiness can expose component-level state and return HTTP 503 without leaking
+  the underlying provider exception.
+- A read-only Ollama model-list request can verify both service reachability and
+  model availability without generating text or pulling artifacts.
+- Model readiness probes must account for lazy loading so an operational check
+  does not unexpectedly trigger a download.
+
+### Questions
+
+- Should later deployments cache readiness results briefly to avoid excessive
+  dependency checks under frequent orchestration probes?
+- How should container startup ordering use liveness and readiness without
+  introducing application-level retries?
+
+## Milestone 16C
+
+### Learned
+
+- A multi-stage frontend image separates build tools from the small static-file
+  runtime shipped to users.
+- A same-origin `/api` reverse proxy keeps internal Compose service names out of
+  browser URLs while SPA fallback preserves React Router refreshes.
+- Compose dependency health can order Qdrant, backend, and frontend startup
+  without adding retry logic to application components.
+- Persisting vectors without persisting the document catalog creates an explicit
+  lifecycle consistency limitation across backend restarts.
+
+### Questions
+
+- Which durable catalog should eventually coordinate document metadata with
+  persistent Qdrant points?
+- When would immutable image digests or a Python dependency lock become necessary
+  for stricter deployment reproducibility?
