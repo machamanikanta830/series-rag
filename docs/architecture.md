@@ -39,14 +39,48 @@ The architecture stays simple because the goal is to understand the mechanics of
 retrieval. Data models and small functions make intermediate results easy to
 print, assert in tests, and reason about while debugging.
 
+### Runtime configuration and dependency graph
+
+`RuntimeSettings` reads and validates the process environment once, and
+`build_runtime_state` constructs one explicit component graph:
+
+```text
+RuntimeSettings
+  ├─ EmbeddingProvider
+  ├─ VectorStore ───────────────┐
+  ├─ InMemoryDocumentCatalog ───┼─ IngestionService
+  │                             └─ DocumentDeletionService
+  ├─ EmbeddingProvider + VectorStore → SemanticRetriever
+  ├─ ContextBuilder
+  ├─ PromptBuilder
+  └─ GenerationProvider
+       ↓
+     RAGPipeline
+```
+
+FastAPI's dependency functions return components from one shared `RuntimeState`,
+so uploads, queries, catalog reads, and deletions operate on the same objects.
+They remain overrideable for offline HTTP tests. The default graph uses a small
+deterministic embedding provider, `InMemoryVectorStore`, an in-memory catalog,
+and `FakeGenerationProvider`. Explicit production-style settings replace the
+embedding provider with Sentence Transformers, the vector store with
+`QdrantVectorStore`, and generation with `OllamaGenerationProvider` as selected.
+Unsupported or incomplete selections fail during configuration instead of
+falling back silently.
+
+Qdrant and Ollama clients are configured without readiness probes in this
+milestone; service health belongs to the next runtime milestone. The document
+catalog is still process-local even when Qdrant stores vectors remotely, so this
+configuration does not yet provide durable document-management metadata.
+
 ### FastAPI adapter
 
 `app.api.main` exposes metadata at `/`, a process-level `/health` response,
 OpenAPI documentation, and a working `/query` adapter around `RAGPipeline`.
 Pydantic request and response models remain separate from internal immutable
 domain models. The pipeline is obtained through an overrideable FastAPI
-dependency, allowing API tests to run entirely offline without Sentence
-Transformers, Qdrant, or Ollama.
+dependency backed by shared runtime state, allowing API tests to run entirely
+offline without Sentence Transformers, Qdrant, or Ollama.
 
 ### React document adapters
 

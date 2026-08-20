@@ -260,3 +260,21 @@ questions, not to produce formal documentation.
   retrieval, or remain independent traceable sections?
 - Which DOCX structures would justify expanding extraction beyond body
   paragraphs and tables?
+
+## Milestone 16A
+
+### Learned
+
+- Validated environment settings can select concrete providers while leaving
+  application endpoints dependent only on existing abstractions.
+- One shared runtime graph keeps ingestion, retrieval, catalog, deletion, and
+  generation components aligned on the same process-owned state.
+- Explicit provider validation prevents a requested production service from
+  silently falling back to a development fake.
+
+### Questions
+
+- Which checks should distinguish process health from external-service
+  readiness?
+- How should durable document-catalog metadata be coordinated with Qdrant in a
+  later deployment milestone?

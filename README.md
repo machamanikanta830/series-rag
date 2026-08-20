@@ -60,6 +60,40 @@ may resolve to a global Conda installation:
 .venv/bin/pytest
 ```
 
+## Runtime configuration
+
+The FastAPI process builds one shared runtime dependency graph from environment
+variables when the application module is imported. With no variables set, the
+development configuration remains fully offline: deterministic development
+embeddings, an in-memory vector store and document catalog, and fake generation.
+This keeps local API tests and the learning workflow independent of Qdrant,
+Ollama, and model downloads.
+
+The repository-level `.env.example` lists every setting. The application reads
+the process environment directly; it does not load `.env` files implicitly. A
+production-style local process can be configured explicitly before it starts:
+
+```bash
+export SERIESRAG_EMBEDDING_PROVIDER=sentence_transformer
+export SERIESRAG_EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
+export SERIESRAG_VECTOR_STORE=qdrant
+export SERIESRAG_QDRANT_URL=http://localhost:6333
+export SERIESRAG_QDRANT_COLLECTION=seriesrag
+export SERIESRAG_GENERATION_PROVIDER=ollama
+export SERIESRAG_OLLAMA_URL=http://localhost:11434
+export SERIESRAG_OLLAMA_MODEL=llama3.2
+export SERIESRAG_CONTEXT_MAX_CHARACTERS=4000
+export SERIESRAG_DEFAULT_TOP_K=5
+
+.venv/bin/uvicorn app.api.main:app --host 127.0.0.1 --port 8000
+```
+
+Qdrant and Ollama must already be available at the configured URLs, and the
+Sentence Transformer model must be locally loadable. Unsupported providers or
+missing settings for a selected provider stop configuration with a clear error;
+the application never silently substitutes fake generation or in-memory storage.
+The document catalog remains in memory in every mode at this stage.
+
 ## Frontend foundation
 
 The `frontend/` directory contains a responsive React and TypeScript application
