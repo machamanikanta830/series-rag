@@ -71,9 +71,9 @@ navigation and placeholder pages at:
 - `/chat`
 - `/documents`
 
-The upload page calls the SeriesRAG document-ingestion API, and the Documents
-page reads the in-process catalog. Chat remains a placeholder for a later
-milestone.
+The upload page calls the SeriesRAG document-ingestion API, the Documents page
+reads the in-process catalog, and the Chat page sends grounded questions to the
+existing query API.
 
 Start the FastAPI backend from the repository root:
 
@@ -90,8 +90,9 @@ npm run dev
 ```
 
 Open the local Vite URL, visit `/upload`, choose one supported file under 1 MB,
-and submit it. During local development, Vite proxies `/documents` to FastAPI at
-`http://localhost:8000`, so backend CORS configuration is not required.
+and submit it. During local development, Vite proxies `/documents` and `/query`
+to FastAPI at `http://localhost:8000`, so backend CORS configuration is not
+required.
 
 After uploading, visit `/documents` to browse the catalog. Select a document to
 inspect its chunks without leaving the page. PDF chunks show their source page;
@@ -99,6 +100,13 @@ DOCX chunks show available section and heading provenance. The empty catalog
 links back to `/upload`, and transient list or detail failures can be retried.
 The selected-document panel also provides an explicit, confirmed delete action.
 Successful deletion updates the catalog in place without reloading the browser.
+
+Visit `/chat` to submit a question and choose how many source chunks should be
+retrieved. Successful questions and grounded answers are appended in order for
+the current browser session. Each answer can be copied, and its supporting
+sources can be expanded to inspect chunk text and available provenance. Clearing
+the conversation removes only this in-memory history; uploaded documents remain
+unchanged. Refreshing the browser may reset the conversation.
 
 `frontend/.env.example` documents `VITE_API_BASE_URL`. Leave it blank for the
 local proxy workflow. Set it to a separately hosted API base URL only when that

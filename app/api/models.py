@@ -41,6 +41,7 @@ class SourceResponse(BaseModel):
     chunk_index: int
     text: str
     score: float
+    metadata: dict[str, str]
 
 
 class QueryResponse(BaseModel):

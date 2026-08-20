@@ -5,3 +5,4 @@ export {
   listDocuments,
   uploadDocument,
 } from "./documents";
+export { queryDocuments, QueryApiError } from "./query";
